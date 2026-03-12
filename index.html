@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MedicinaARG — Formación Médica de Élite</title>
   <meta name="description" content="La plataforma número 1 para estudiantes de medicina en Argentina. Del primer al último año, contenido de élite.">
-  <link rel="stylesheet" href="css/main.css">
+  <!-- Cache-busting: v=2.0.0 -->
+  <link rel="stylesheet" href="css/main.css?v=2.0.0">
 </head>
 <body>
 
@@ -14,56 +15,41 @@
      ================================================ -->
 <div id="loader">
 
-  <!-- Floating particles bg -->
   <div class="loader-particles"></div>
 
-  <!-- Skull with rings -->
   <div class="loader-skull">
     <div class="loader-rings">
       <div class="loader-ring"></div>
       <div class="loader-ring"></div>
       <div class="loader-ring"></div>
     </div>
-    <!-- Detailed SVG skull -->
     <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none">
-      <!-- Glow base -->
       <ellipse cx="100" cy="105" rx="60" ry="15" fill="rgba(123,47,190,0.3)" filter="url(#glow)"/>
-      <!-- Main skull shape -->
       <path d="M100 20 C55 20 30 50 30 85 C30 108 42 128 62 140 L62 165 C62 170 67 174 72 174 L128 174 C133 174 138 170 138 165 L138 140 C158 128 170 108 170 85 C170 50 145 20 100 20Z"
             fill="url(#skullGrad)" stroke="rgba(157,78,221,0.6)" stroke-width="1.5"/>
-      <!-- Cranium highlight -->
       <path d="M100 25 C65 25 38 52 38 83 C38 100 45 115 56 126"
             stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <!-- Eye sockets -->
       <ellipse cx="77" cy="90" rx="18" ry="22" fill="rgba(10,3,20,0.9)" stroke="rgba(123,47,190,0.4)" stroke-width="1"/>
       <ellipse cx="123" cy="90" rx="18" ry="22" fill="rgba(10,3,20,0.9)" stroke="rgba(123,47,190,0.4)" stroke-width="1"/>
-      <!-- Eye glow pupils -->
       <ellipse cx="77" cy="90" rx="8" ry="10" fill="rgba(123,47,190,0.4)"/>
       <ellipse cx="123" cy="90" rx="8" ry="10" fill="rgba(123,47,190,0.4)"/>
       <ellipse cx="77" cy="90" rx="4" ry="5" fill="rgba(157,78,221,0.7)"/>
       <ellipse cx="123" cy="90" rx="4" ry="5" fill="rgba(157,78,221,0.7)"/>
-      <!-- Nose cavity -->
       <path d="M93 115 L100 105 L107 115 Q104 122 100 122 Q96 122 93 115Z"
             fill="rgba(10,3,20,0.85)" stroke="rgba(123,47,190,0.3)" stroke-width="1"/>
-      <!-- Cheekbones -->
       <path d="M55 110 Q42 120 38 135" stroke="rgba(255,255,255,0.08)" stroke-width="2" fill="none"/>
       <path d="M145 110 Q158 120 162 135" stroke="rgba(255,255,255,0.08)" stroke-width="2" fill="none"/>
-      <!-- Jaw line -->
       <path d="M62 142 Q62 158 72 168 L128 168 Q138 158 138 142"
             stroke="rgba(157,78,221,0.3)" stroke-width="1" fill="none"/>
-      <!-- Teeth -->
       <rect x="76" y="150" width="9" height="16" rx="2" fill="rgba(240,235,255,0.9)" stroke="rgba(123,47,190,0.3)" stroke-width="0.5"/>
       <rect x="87" y="148" width="11" height="18" rx="2" fill="rgba(245,240,255,0.95)" stroke="rgba(123,47,190,0.3)" stroke-width="0.5"/>
       <rect x="100" y="148" width="11" height="18" rx="2" fill="rgba(245,240,255,0.95)" stroke="rgba(123,47,190,0.3)" stroke-width="0.5"/>
       <rect x="113" y="150" width="9" height="16" rx="2" fill="rgba(240,235,255,0.9)" stroke="rgba(123,47,190,0.3)" stroke-width="0.5"/>
-      <!-- Teeth dividers -->
       <line x1="87" y1="150" x2="87" y2="168" stroke="rgba(123,47,190,0.4)" stroke-width="0.5"/>
       <line x1="100" y1="148" x2="100" y2="166" stroke="rgba(123,47,190,0.4)" stroke-width="0.5"/>
       <line x1="113" y1="150" x2="113" y2="168" stroke="rgba(123,47,190,0.4)" stroke-width="0.5"/>
-      <!-- Cranial sutures -->
       <path d="M100 25 L100 70" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3"/>
       <path d="M55 60 Q100 55 145 60" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3"/>
-      <!-- Gradient def -->
       <defs>
         <radialGradient id="skullGrad" cx="40%" cy="35%" r="60%">
           <stop offset="0%" stop-color="#C8B8E8"/>
@@ -79,11 +65,9 @@
     </svg>
   </div>
 
-  <!-- Text -->
   <p class="loader-title">MEDICINA</p>
   <p class="loader-subtitle">Argentina · Ciencia · Futuro</p>
 
-  <!-- Progress bar -->
   <div class="loader-bar-wrap">
     <div class="loader-bar"></div>
   </div>
@@ -124,26 +108,46 @@
     <div class="nav-actions">
       <a href="#" class="btn-nav-ghost" data-modal="login">
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Entrar
+        <span>Entrar</span>
       </a>
       <a href="#" class="btn-nav-solid" data-modal="login">Começar Grátis</a>
+      <!-- Hamburger button (visible on mobile) -->
+      <button class="nav-hamburger" aria-label="Menú" aria-expanded="false" aria-controls="navMobile">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </div>
 </nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-mobile" id="navMobile" role="navigation" aria-label="Menú móvil">
+  <a href="#inicio">Inicio</a>
+  <a href="#nosotros">Nosotros</a>
+  <a href="#cursos">Cursos</a>
+  <a href="#blog">Blog</a>
+  <a href="pages/contacto.html">Contacto</a>
+  <div class="nav-mobile-btns">
+    <a href="#" class="btn-nav-ghost" data-modal="login" style="display:flex;align-items:center;justify-content:center;gap:8px">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Entrar
+    </a>
+    <a href="#" class="btn-nav-solid" data-modal="login" style="display:block;text-align:center">Começar Grátis</a>
+  </div>
+</div>
 
 <!-- ================================================
      HERO
      ================================================ -->
 <section class="hero" id="inicio">
 
-  <!-- Video loop background -->
   <div class="hero-video-bg">
     <video autoplay muted loop playsinline>
       <source src="images/hero-video.mp4" type="video/mp4">
     </video>
   </div>
 
-  <!-- Left content -->
   <div class="hero-left">
     <div class="hero-eyebrow">
       <span class="hero-eyebrow-dot"></span>
@@ -189,7 +193,6 @@
     </div>
   </div>
 
-  <!-- Right — Doctor + Skull hero image -->
   <div class="hero-right">
     <div class="hero-img-frame">
       <img
@@ -294,7 +297,6 @@
   <div class="about-container">
     <div class="about-inner">
 
-      <!-- Image side -->
       <div class="about-visual reveal-left">
         <div class="about-img-wrap">
           <img
@@ -308,7 +310,6 @@
           </div>
         </div>
         <div class="about-deco">
-          <!-- Skull SVG mini -->
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <path d="M50 10 C25 10 15 28 15 45 C15 58 22 68 34 74 L34 88 C34 90.5 36.5 92 39 92 L61 92 C63.5 92 66 90.5 66 88 L66 74 C78 68 85 58 85 45 C85 28 75 10 50 10Z" fill="rgba(123,47,190,0.5)" stroke="rgba(157,78,221,0.4)" stroke-width="1"/>
             <ellipse cx="39" cy="46" rx="9" ry="11" fill="rgba(10,3,20,0.8)"/>
@@ -321,7 +322,6 @@
         </div>
       </div>
 
-      <!-- Text side -->
       <div class="about-text reveal-right">
         <p class="section-label">Quiénes Somos</p>
         <h2 class="section-title">
@@ -355,7 +355,7 @@
             Actualizaciones permanentes según cambios en los programas
           </li>
         </ul>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:40px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:36px">
           <a href="#cursos" class="btn-primary">
             Ver cursos
             <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -387,13 +387,14 @@
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
       </div>
-      <div class="video-wrap reveal-right" style="transition-delay:0.15s">
+
+      <div class="video-wrap reveal-right">
         <video autoplay muted loop playsinline>
           <source src="images/hero-video.mp4" type="video/mp4">
         </video>
         <div class="video-label">
           <span class="video-live-dot"></span>
-          Clases en vivo disponibles
+          Clase en vivo
         </div>
       </div>
     </div>
@@ -583,7 +584,7 @@
       <div class="reveal-left">
         <p class="section-label">Testimonios</p>
         <h2 class="section-title">Lo que dicen<br>nuestros <em>estudiantes</em></h2>
-        <p style="margin-top:20px;font-size:14.5px;color:var(--text-dim);line-height:1.7;margin-bottom:36px">
+        <p style="margin-top:20px;font-size:14.5px;color:var(--text-dim);line-height:1.7;margin-bottom:32px">
           Miles de futuros médicos confían en MedicinaARG para avanzar con confianza en la carrera más exigente del país.
         </p>
         <div class="test-btns">
@@ -714,7 +715,7 @@
 
       <div class="footer-col">
         <h4>Newsletter</h4>
-        <p style="font-size:13px;color:var(--gray-mid);line-height:1.6;margin-bottom:18px">
+        <p style="font-size:13px;color:var(--gray-mid);line-height:1.6;margin-bottom:16px">
           Recibí artículos, recursos y novedades en tu correo universitario.
         </p>
         <form class="newsletter-input-wrap" onsubmit="return false;">
@@ -784,6 +785,7 @@
   </div>
 </div>
 
-<script src="js/main.js"></script>
+<!-- Cache-busting: v=2.0.0 -->
+<script src="js/main.js?v=2.0.0"></script>
 </body>
 </html>
