@@ -267,18 +267,53 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ─── FORMS DEMO ─────────────────────────── */
-  ['loginForm', 'registerForm'].forEach(id => {
-    const form = document.getElementById(id);
-    form?.addEventListener('submit', e => {
-      e.preventDefault();
-      const btn = form.querySelector('.form-submit');
-      btn.textContent = 'Processando...';
-      btn.disabled = true;
+  document.getElementById('loginForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('.form-submit');
+    btn.textContent = 'Entrando...';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✓ Sucesso!';
+      btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
+    }, 1400);
+  });
+
+  document.getElementById('registerForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('.form-submit');
+    const nome     = document.getElementById('reg-nome')?.value?.trim();
+    const email    = document.getElementById('reg-email')?.value?.trim();
+    const whatsapp = document.getElementById('reg-whatsapp')?.value?.trim();
+
+    if (!nome || !email || !whatsapp) {
+      btn.textContent = '⚠ Preencha todos os campos';
+      btn.style.background = 'linear-gradient(135deg,#c0392b,#922b21)';
       setTimeout(() => {
-        btn.textContent = '✓ Sucesso!';
-        btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
-      }, 1400);
-    });
+        btn.textContent = 'Solicitar acesso';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2500);
+      return;
+    }
+
+    btn.textContent = 'Enviando...';
+    btn.disabled = true;
+
+    // Send to admin via WhatsApp
+    const msg = encodeURIComponent(
+      `🎓 *NOVO CADASTRO — MedicinaARG*\n\n` +
+      `👤 *Nome:* ${nome}\n` +
+      `📧 *Email:* ${email}\n` +
+      `📱 *WhatsApp:* ${whatsapp}\n\n` +
+      `_Solicitação recebida pelo site_`
+    );
+    const waUrl = `https://wa.me/5513981763452?text=${msg}`;
+
+    setTimeout(() => {
+      btn.textContent = '✓ Solicitação enviada!';
+      btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
+      window.open(waUrl, '_blank');
+    }, 1000);
   });
 
   /* ─── SMOOTH SCROLL ─────────────────────── */

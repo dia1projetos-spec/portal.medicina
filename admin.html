@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedicinaARG — Painel Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs,
+             deleteDoc, updateDoc, addDoc, query, orderBy, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    /* ══════════════════════════════════════════
+       🔧 CONFIGURE AQUI SEU FIREBASE
+       ══════════════════════════════════════════ */
+    const firebaseConfig = {
+      apiKey:            "SUA_API_KEY",
+      authDomain:        "SEU_PROJETO.firebaseapp.com",
+      projectId:         "SEU_PROJETO",
+      storageBucket:     "SEU_PROJETO.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId:             "SEU_APP_ID"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    /* ══════════════════════════════════════════
+       ESTADO GLOBAL
+       ══════════════════════════════════════════ */
+    let currentSection = 'usuarios';
+    let editingUserId  = null;
+    let editingSubjectId = null;
+
+    /* ══════════════════════════════════════════
+       AUTH — Verifica se é admin
+       ══════════════════════════════════════════ */
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        showLogin();
+        return;
+      }
+      // Verifica role admin no Firestore
+      const snap = await getDoc(doc(db, 'admins', user.uid));
+      if (!snap.exists()) {
+        await signOut(auth);
+        showLogin('Acesso negado. Você não é administrador.');
+        return;
+      }
+      showPanel(user);
+      loadSection('usuarios');
+    });
+
+    /* ══ LOGIN ══ */
+    window.doLogin = async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass  = document.getElementById('loginPass').value;
+      const btn   = document.getElementById('loginBtn');
+      const err   = document.getElementById('loginErr');
+      btn.textContent = 'Entrando...'; btn.disabled = true; err.textContent = '';
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch(e) {
+        err.textContent = 'Email ou senha incorretos.';
+        btn.textContent = 'Entrar'; btn.disabled = false;
+      }
+    };
+
+    window.doLogout = async () => {
+      await signOut(auth);
+      location.reload();
+    };
+
+    function showLogin(msg = '') {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminPanel').style.display  = 'none';
+      if (msg) document.getElementById('loginErr').textContent = msg;
+    }
+    function showPanel(user) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display  = 'flex';
+      document.getElementById('adminEmail').textContent    = user.email;
+    }
+
+    /* ══════════════════════════════════════════
+       NAVEGAÇÃO
+       ══════════════════════════════════════════ */
+    window.loadSection = (sec) => {
+      currentSection = sec;
+      document.querySelectorAll('.nav-item').forEach(el =>
+        el.classList.toggle('active', el.dataset.sec === sec));
+      document.querySelectorAll('.section').forEach(el =>
+        el.style.display = el.id === 'sec-' + sec ? 'block' : 'none');
+
+      if (sec === 'usuarios')  loadUsuarios();
+      if (sec === 'materias')  loadMaterias();
+      if (sec === 'financeiro') loadFinanceiro();
+    };
+
+    /* ══════════════════════════════════════════
+       USUÁRIOS
+       ══════════════════════════════════════════ */
+    async function loadUsuarios() {
+      const list = document.getElementById('userList');
+      list.innerHTML = '<div class="loading">Carregando...</div>';
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        if (snap.empty) { list.innerHTML = '<div class="empty-state">Nenhum usuário cadastrado ainda.</div>'; return; }
+        list.innerHTML = '';
+        snap.forEach(d => {
+          const u = d.data();
+          list.innerHTML += userCard(d.id, u);
+        });
+      } catch(e) {
+        list.innerHTML = '<div class="error-state">Erro ao carregar usuários.</div>';
+      }
+    }
+
+    function userCard(id, u) {
+      const status = u.ativo ? '<span class="badge badge-green">Ativo</span>' : '<span class="badge badge-red">Inativo</span>';
+      return `
+        <div class="user-card" id="uc-${id}">
+          <div class="user-card-left">
+            <div class="user-avatar">${(u.nome||'?')[0].toUpperCase()}</div>
+            <div class="user-info">
+              <strong>${u.nome || 'Sem nome'}</strong>
+              <span>${u.email || ''}</span>
+              <span class="user-wa">📱 ${u.whatsapp || '-'}</span>
+            </div>
+          </div>
+          <div class="user-card-right">
+            ${status}
+            <button class="btn-icon btn-edit" onclick="openEditUser('${id}')" title="Editar">✏️</button>
+            <button class="btn-icon btn-toggle" onclick="toggleUser('${id}', ${!u.ativo})" title="${u.ativo?'Desativar':'Ativar'}">
+              ${u.ativo ? '🔒' : '🔓'}
+            </button>
+            <button class="btn-icon btn-delete" onclick="deleteUser('${id}')" title="Excluir">🗑️</button>
+          </div>
+        </div>`;
+    }
+
+    window.openNewUser = () => {
+      editingUserId = null;
+      document.getElementById('userModalTitle').textContent = 'Cadastrar Usuário';
+      document.getElementById('userForm').reset();
+      document.getElementById('userPassGroup').style.display = 'block';
+      showModal('userModal');
+    };
+
+    window.openEditUser = async (id) => {
+      editingUserId = id;
+      document.getElementById('userModalTitle').textContent = 'Editar Usuário';
+      document.getElementById('userPassGroup').style.display = 'none';
+      const snap = await getDoc(doc(db, 'users', id));
+      const u = snap.data();
+      document.getElementById('uNome').value      = u.nome || '';
+      document.getElementById('uEmail').value     = u.email || '';
+      document.getElementById('uWhatsapp').value  = u.whatsapp || '';
+      document.getElementById('uAno').value       = u.ano || '1';
+      showModal('userModal');
+    };
+
+    window.saveUser = async () => {
+      const btn  = document.getElementById('saveUserBtn');
+      btn.textContent = 'Salvando...'; btn.disabled = true;
+      const nome     = document.getElementById('uNome').value.trim();
+      const email    = document.getElementById('uEmail').value.trim();
+      const whatsapp = document.getElementById('uWhatsapp').value.trim();
+      const ano      = document.getElementById('uAno').value;
+      const senha    = document.getElementById('uSenha').value;
+
+      try {
+        if (editingUserId) {
+          await updateDoc(doc(db, 'users', editingUserId), { nome, email, whatsapp, ano, updatedAt: serverTimestamp() });
+          showToast('Usuário atualizado!');
+        } else {
+          // Cria no Firebase Auth via Cloud Function ou direto
+          const newRef = doc(collection(db, 'users'));
+          await setDoc(newRef, {
+            nome, email, whatsapp, ano,
+            ativo: true,
+            senha_temp: senha, // armazenada temporariamente — use Cloud Function em produção
+            createdAt: serverTimestamp()
+          });
+          showToast('Usuário cadastrado! ✅');
+        }
+        closeModal('userModal');
+        loadUsuarios();
+      } catch(e) {
+        showToast('Erro ao salvar: ' + e.message, 'error');
+      }
+      btn.textContent = 'Salvar'; btn.disabled = false;
+    };
+
+    window.toggleUser = async (id, novoStatus) => {
+      await updateDoc(doc(db, 'users', id), { ativo: novoStatus });
+      showToast(novoStatus ? 'Usuário ativado!' : 'Usuário desativado!');
+      loadUsuarios();
+    };
+
+    window.deleteUser = async (id) => {
+      if (!confirm('Tem certeza? Isso removerá o acesso do aluno.')) return;
+      await deleteDoc(doc(db, 'users', id));
+      showToast('Usuário removido.');
+      loadUsuarios();
+    };
+
+    /* ══════════════════════════════════════════
+       FINANCEIRO — FATURAS
+       ══════════════════════════════════════════ */
+    async function loadFinanceiro() {
+      const sel = document.getElementById('faturaUserSel');
+      sel.innerHTML = '<option value="">— Selecionar aluno —</option>';
+      const snap = await getDocs(collection(db, 'users'));
+      snap.forEach(d => {
+        const u = d.data();
+        sel.innerHTML += `<option value="${d.id}">${u.nome} (${u.email})</option>`;
+      });
+      document.getElementById('faturasList').innerHTML = '<div class="empty-state">Selecione um aluno para ver as faturas.</div>';
+    }
+
+    window.loadFaturas = async () => {
+      const uid  = document.getElementById('faturaUserSel').value;
+      const list = document.getElementById('faturasList');
+      if (!uid) { list.innerHTML = '<div class="empty-state">Selecione um aluno.</div>'; return; }
+      list.innerHTML = '<div class="loading">Carregando...</div>';
+      const snap = await getDocs(query(collection(db, 'users', uid, 'faturas'), orderBy('vencimento', 'desc')));
+      if (snap.empty) { list.innerHTML = '<div class="empty-state">Nenhuma fatura lançada.</div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(d => {
+        const f = d.data();
+        const pago = f.status === 'pago';
+        list.innerHTML += `
+          <div class="fatura-card ${pago ? 'fatura-paga' : 'fatura-aberta'}">
+            <div class="fatura-info">
+              <strong>${f.descricao || 'Mensalidade'}</strong>
+              <span>Venc: ${f.vencimento || '-'}</span>
+            </div>
+            <div class="fatura-valor">R$ ${(f.valor||0).toFixed(2)}</div>
+            <div class="fatura-status">
+              ${pago
+                ? '<span class="badge badge-green">✅ Pago</span>'
+                : '<span class="badge badge-yellow">⏳ Em aberto</span>'}
+            </div>
+            <div class="fatura-actions">
+              ${!pago ? `<button class="btn-sm btn-green" onclick="marcarPago('${uid}','${d.id}')">Marcar pago</button>` : ''}
+              <button class="btn-sm btn-red" onclick="deleteFatura('${uid}','${d.id}')">🗑️</button>
+            </div>
+          </div>`;
+      });
+    };
+
+    window.openNovaFatura = () => {
+      const uid = document.getElementById('faturaUserSel').value;
+      if (!uid) { showToast('Selecione um aluno primeiro.', 'error'); return; }
+      document.getElementById('faturaForm').reset();
+      showModal('faturaModal');
+    };
+
+    window.saveFatura = async () => {
+      const uid  = document.getElementById('faturaUserSel').value;
+      const btn  = document.getElementById('saveFaturaBtn');
+      btn.textContent = 'Salvando...'; btn.disabled = true;
+      const descricao   = document.getElementById('fDescricao').value.trim();
+      const valor       = parseFloat(document.getElementById('fValor').value);
+      const vencimento  = document.getElementById('fVenc').value;
+      const status      = document.getElementById('fStatus').value;
+      try {
+        await addDoc(collection(db, 'users', uid, 'faturas'), {
+          descricao, valor, vencimento, status, createdAt: serverTimestamp()
+        });
+        showToast('Fatura lançada!');
+        closeModal('faturaModal');
+        loadFaturas();
+      } catch(e) {
+        showToast('Erro: ' + e.message, 'error');
+      }
+      btn.textContent = 'Salvar'; btn.disabled = false;
+    };
+
+    window.marcarPago = async (uid, fid) => {
+      await updateDoc(doc(db, 'users', uid, 'faturas', fid), { status: 'pago' });
+      showToast('Fatura marcada como paga! ✅');
+      loadFaturas();
+    };
+
+    window.deleteFatura = async (uid, fid) => {
+      if (!confirm('Excluir esta fatura?')) return;
+      await deleteDoc(doc(db, 'users', uid, 'faturas', fid));
+      showToast('Fatura removida.');
+      loadFaturas();
+    };
+
+    /* ══════════════════════════════════════════
+       MATÉRIAS & CONTEÚDOS
+       ══════════════════════════════════════════ */
+    async function loadMaterias() {
+      const list = document.getElementById('materiasList');
+      list.innerHTML = '<div class="loading">Carregando...</div>';
+      const snap = await getDocs(query(collection(db, 'materias'), orderBy('ordem')));
+      if (snap.empty) { list.innerHTML = '<div class="empty-state">Nenhuma matéria criada ainda.</div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(d => {
+        const m = d.data();
+        list.innerHTML += `
+          <div class="materia-card">
+            <div class="materia-card-left">
+              <div class="materia-ano-badge">Ano ${m.ano}</div>
+              <div class="materia-info">
+                <strong>${m.nome}</strong>
+                <span>${m.descricao || ''}</span>
+              </div>
+            </div>
+            <div class="materia-card-right">
+              <span class="badge badge-purple">${m.totalConteudos || 0} conteúdos</span>
+              <button class="btn-sm btn-primary" onclick="openConteudos('${d.id}', '${m.nome}')">📂 Conteúdos</button>
+              <button class="btn-icon btn-edit" onclick="openEditMateria('${d.id}')">✏️</button>
+              <button class="btn-icon btn-delete" onclick="deleteMateria('${d.id}')">🗑️</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    window.openNewMateria = () => {
+      editingSubjectId = null;
+      document.getElementById('materiaModalTitle').textContent = 'Nova Matéria';
+      document.getElementById('materiaForm').reset();
+      showModal('materiaModal');
+    };
+
+    window.openEditMateria = async (id) => {
+      editingSubjectId = id;
+      document.getElementById('materiaModalTitle').textContent = 'Editar Matéria';
+      const snap = await getDoc(doc(db, 'materias', id));
+      const m = snap.data();
+      document.getElementById('mNome').value     = m.nome || '';
+      document.getElementById('mAno').value      = m.ano  || '1';
+      document.getElementById('mDesc').value     = m.descricao || '';
+      document.getElementById('mOrdem').value    = m.ordem || 1;
+      showModal('materiaModal');
+    };
+
+    window.saveMateria = async () => {
+      const btn = document.getElementById('saveMateriaBtn');
+      btn.textContent = 'Salvando...'; btn.disabled = true;
+      const nome      = document.getElementById('mNome').value.trim();
+      const ano       = document.getElementById('mAno').value;
+      const descricao = document.getElementById('mDesc').value.trim();
+      const ordem     = parseInt(document.getElementById('mOrdem').value) || 1;
+      try {
+        if (editingSubjectId) {
+          await updateDoc(doc(db, 'materias', editingSubjectId), { nome, ano, descricao, ordem });
+          showToast('Matéria atualizada!');
+        } else {
+          await addDoc(collection(db, 'materias'), { nome, ano, descricao, ordem, totalConteudos: 0, createdAt: serverTimestamp() });
+          showToast('Matéria criada! ✅');
+        }
+        closeModal('materiaModal');
+        loadMaterias();
+      } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+      btn.textContent = 'Salvar'; btn.disabled = false;
+    };
+
+    window.deleteMateria = async (id) => {
+      if (!confirm('Excluir esta matéria e todos os conteúdos?')) return;
+      await deleteDoc(doc(db, 'materias', id));
+      showToast('Matéria removida.');
+      loadMaterias();
+    };
+
+    /* ── CONTEÚDOS DE UMA MATÉRIA ── */
+    window.openConteudos = async (materiaId, materiaNome) => {
+      document.getElementById('conteudoMateriaId').value   = materiaId;
+      document.getElementById('conteudoMateriaTitle').textContent = materiaNome;
+      await loadConteudos(materiaId);
+      showModal('conteudoModal');
+    };
+
+    async function loadConteudos(materiaId) {
+      const list = document.getElementById('conteudoList');
+      list.innerHTML = '<div class="loading">Carregando...</div>';
+      const snap = await getDocs(query(
+        collection(db, 'materias', materiaId, 'conteudos'),
+        orderBy('ordem')
+      ));
+      if (snap.empty) { list.innerHTML = '<div class="empty-state">Nenhum conteúdo ainda.</div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(d => {
+        const c = d.data();
+        const icons = { video:'🎬', audio:'🎧', podcast:'🎙️', pdf:'📄' };
+        list.innerHTML += `
+          <div class="conteudo-item">
+            <span class="conteudo-tipo">${icons[c.tipo]||'📎'} ${c.tipo}</span>
+            <div class="conteudo-info">
+              <strong>${c.titulo}</strong>
+              <span class="conteudo-url">${c.url||''}</span>
+            </div>
+            <span class="conteudo-ordem">#${c.ordem}</span>
+            <div class="conteudo-actions">
+              ${c.tipo === 'audio' || c.tipo === 'podcast'
+                ? `<span class="badge badge-blue">${c.permitirDownload ? '⬇️ Download' : 'Só ouvir'}</span>`
+                : ''}
+              <button class="btn-icon btn-delete" onclick="deleteConteudo('${materiaId}','${d.id}')">🗑️</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    window.openNovoConteudo = () => {
+      document.getElementById('conteudoForm').reset();
+      toggleDownloadOpt();
+      showModal('novoConteudoModal');
+    };
+
+    window.toggleDownloadOpt = () => {
+      const tipo = document.getElementById('cTipo').value;
+      document.getElementById('downloadOptGroup').style.display =
+        (tipo === 'audio' || tipo === 'podcast') ? 'flex' : 'none';
+    };
+
+    window.saveConteudo = async () => {
+      const btn       = document.getElementById('saveConteudoBtn');
+      btn.textContent = 'Salvando...'; btn.disabled = true;
+      const materiaId       = document.getElementById('conteudoMateriaId').value;
+      const titulo          = document.getElementById('cTitulo').value.trim();
+      const tipo            = document.getElementById('cTipo').value;
+      const url             = document.getElementById('cUrl').value.trim();
+      const ordem           = parseInt(document.getElementById('cOrdem').value) || 1;
+      const permitirDownload = document.getElementById('cDownload').checked;
+      try {
+        await addDoc(collection(db, 'materias', materiaId, 'conteudos'), {
+          titulo, tipo, url, ordem, permitirDownload, createdAt: serverTimestamp()
+        });
+        // atualiza contador
+        const snap = await getDocs(collection(db, 'materias', materiaId, 'conteudos'));
+        await updateDoc(doc(db, 'materias', materiaId), { totalConteudos: snap.size });
+        showToast('Conteúdo adicionado! ✅');
+        closeModal('novoConteudoModal');
+        await loadConteudos(materiaId);
+      } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+      btn.textContent = 'Adicionar'; btn.disabled = false;
+    };
+
+    window.deleteConteudo = async (materiaId, cid) => {
+      if (!confirm('Remover este conteúdo?')) return;
+      await deleteDoc(doc(db, 'materias', materiaId, 'conteudos', cid));
+      showToast('Conteúdo removido.');
+      loadConteudos(materiaId);
+    };
+
+    /* ══════════════════════════════════════════
+       UTILITÁRIOS
+       ══════════════════════════════════════════ */
+    window.showModal  = id => document.getElementById(id).classList.add('active');
+    window.closeModal = id => document.getElementById(id).classList.remove('active');
+
+    window.showToast = (msg, type = 'success') => {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast toast-' + type + ' show';
+      setTimeout(() => t.classList.remove('show'), 3200);
+    };
+
+    // Enter key no login
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+        window.doLogin();
+      }
+    });
+  </script>
+
+  <style>
+    :root {
+      --purple:      #7B2FBE;
+      --purple-deep: #4A0E8F;
+      --purple-dark: #1A0530;
+      --purple-mid:  #2D0B5A;
+      --violet:      #9D4EDD;
+      --lilac:       #C77DFF;
+      --white:       #FFFFFF;
+      --gray-mid:    #9B8FB0;
+      --text-dim:    #C4B8D9;
+      --green:       #27ae60;
+      --red:         #e74c3c;
+      --yellow:      #f39c12;
+      --blue:        #3498db;
+      --sidebar-w:   260px;
+      --font-d:      'Syne', sans-serif;
+      --font-b:      'Outfit', sans-serif;
+      --trans:       0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-b);
+      background: var(--purple-dark);
+      color: var(--white);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ── LOGIN SCREEN ── */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 30% 40%, rgba(123,47,190,0.25) 0%, transparent 60%),
+                  var(--purple-dark);
+    }
+    .login-box {
+      background: rgba(45,11,90,0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(123,47,190,0.4);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 0 80px rgba(123,47,190,0.3);
+    }
+    .login-logo {
+      font-family: var(--font-d);
+      font-size: 1.6rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--white), var(--lilac));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .login-sub { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 36px; }
+    .login-group { margin-bottom: 16px; }
+    .login-group label { display: block; font-family: var(--font-d); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 8px; }
+    .login-group input {
+      width: 100%; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(123,47,190,0.3);
+      padding: 12px 14px; border-radius: 8px;
+      font-family: var(--font-b); font-size: 14px; color: var(--white);
+      outline: none; transition: border-color var(--trans);
+    }
+    .login-group input:focus { border-color: var(--violet); }
+    .login-group input::placeholder { color: rgba(255,255,255,0.2); }
+    .login-btn {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+      border: 1px solid rgba(123,47,190,0.5);
+      border-radius: 8px; color: var(--white);
+      font-family: var(--font-d); font-size: 13px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: var(--trans);
+      box-shadow: 0 0 24px rgba(123,47,190,0.3);
+      margin-top: 8px;
+    }
+    .login-btn:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(123,47,190,0.6); }
+    .login-err { font-size: 12px; color: #e74c3c; margin-top: 12px; min-height: 16px; }
+
+    /* ── ADMIN PANEL LAYOUT ── */
+    #adminPanel {
+      display: none; height: 100vh;
+      flex-direction: row;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: rgba(13,2,32,0.95);
+      border-right: 1px solid rgba(123,47,190,0.2);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(123,47,190,0.15);
+    }
+    .sidebar-logo strong {
+      font-family: var(--font-d); font-size: 1.2rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--white), var(--lilac));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      display: block;
+    }
+    .sidebar-logo span { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-mid); }
+    .sidebar-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 10px;
+      font-family: var(--font-d); font-size: 13px; font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--gray-mid);
+      cursor: pointer; transition: var(--trans);
+      border: 1px solid transparent;
+    }
+    .nav-item:hover { background: rgba(123,47,190,0.1); color: var(--white); }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(123,47,190,0.25), rgba(74,14,143,0.2));
+      border-color: rgba(123,47,190,0.35);
+      color: var(--lilac);
+      box-shadow: 0 0 20px rgba(123,47,190,0.15);
+    }
+    .nav-item .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+    .sidebar-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(123,47,190,0.15);
+    }
+    .admin-info { font-size: 11px; color: var(--gray-mid); margin-bottom: 12px; }
+    .admin-info span { color: var(--lilac); display: block; font-weight: 600; font-size: 12px; }
+    .logout-btn {
+      width: 100%; padding: 10px;
+      background: rgba(231,76,60,0.12);
+      border: 1px solid rgba(231,76,60,0.25);
+      border-radius: 8px; color: #e74c3c;
+      font-family: var(--font-d); font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: var(--trans);
+    }
+    .logout-btn:hover { background: rgba(231,76,60,0.25); }
+
+    /* MAIN CONTENT */
+    .main-content {
+      margin-left: var(--sidebar-w);
+      flex: 1; min-height: 100vh;
+      padding: 36px;
+      overflow-y: auto;
+    }
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title {
+      font-family: var(--font-d); font-size: 1.8rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--white), var(--lilac));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .page-subtitle { font-size: 13px; color: var(--gray-mid); margin-top: 4px; }
+
+    /* SECTIONS */
+    .section { display: none; }
+
+    /* STATS ROW */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(123,47,190,0.2);
+      border-radius: 14px; padding: 24px;
+      position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--lilac));
+    }
+    .stat-num { font-family: var(--font-d); font-size: 2rem; font-weight: 800; color: var(--lilac); }
+    .stat-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray-mid); margin-top: 4px; }
+
+    /* CARDS */
+    .card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(123,47,190,0.18);
+      border-radius: 16px; padding: 28px;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .card-title { font-family: var(--font-d); font-size: 1rem; font-weight: 700; color: var(--white); }
+
+    /* USER CARDS */
+    .user-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(123,47,190,0.15);
+      border-radius: 12px; margin-bottom: 10px;
+      transition: var(--trans); flex-wrap: wrap; gap: 12px;
+    }
+    .user-card:hover { border-color: rgba(123,47,190,0.4); background: rgba(123,47,190,0.06); }
+    .user-card-left { display: flex; align-items: center; gap: 14px; }
+    .user-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-d); font-size: 1rem; font-weight: 800;
+      box-shadow: 0 0 14px rgba(123,47,190,0.4); flex-shrink: 0;
+    }
+    .user-info strong { display: block; font-family: var(--font-d); font-size: 0.9rem; }
+    .user-info span { display: block; font-size: 12px; color: var(--gray-mid); }
+    .user-wa { color: #25D366 !important; font-size: 11px !important; }
+    .user-card-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* MATÉRIAS */
+    .materia-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(123,47,190,0.15);
+      border-radius: 12px; margin-bottom: 10px;
+      transition: var(--trans); flex-wrap: wrap; gap: 12px;
+    }
+    .materia-card:hover { border-color: rgba(123,47,190,0.4); }
+    .materia-card-left { display: flex; align-items: center; gap: 14px; }
+    .materia-ano-badge {
+      background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+      border-radius: 8px; padding: 6px 12px;
+      font-family: var(--font-d); font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .materia-info strong { display: block; font-family: var(--font-d); font-size: 0.9rem; }
+    .materia-info span { font-size: 12px; color: var(--gray-mid); }
+    .materia-card-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* FATURAS */
+    .fatura-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-radius: 12px; margin-bottom: 10px;
+      flex-wrap: wrap; gap: 12px;
+      border: 1px solid;
+    }
+    .fatura-aberta { background: rgba(243,156,18,0.06); border-color: rgba(243,156,18,0.25); }
+    .fatura-paga   { background: rgba(39,174,96,0.06);  border-color: rgba(39,174,96,0.2); }
+    .fatura-info strong { display: block; font-size: 0.9rem; }
+    .fatura-info span   { font-size: 12px; color: var(--gray-mid); }
+    .fatura-valor { font-family: var(--font-d); font-size: 1.1rem; font-weight: 800; color: var(--lilac); }
+    .fatura-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* CONTEÚDOS */
+    .conteudo-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(123,47,190,0.15);
+      border-radius: 10px; margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .conteudo-tipo {
+      font-family: var(--font-d); font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--lilac); white-space: nowrap;
+      background: rgba(123,47,190,0.15);
+      padding: 4px 10px; border-radius: 20px;
+    }
+    .conteudo-info { flex: 1; }
+    .conteudo-info strong { display: block; font-size: 0.88rem; }
+    .conteudo-url { font-size: 11px; color: var(--gray-mid); word-break: break-all; }
+    .conteudo-ordem {
+      font-family: var(--font-d); font-size: 1rem; font-weight: 800;
+      color: rgba(123,47,190,0.5); white-space: nowrap;
+    }
+    .conteudo-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+
+    /* BADGES */
+    .badge {
+      font-family: var(--font-d); font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-green  { background: rgba(39,174,96,0.15);  color: #2ecc71; border: 1px solid rgba(39,174,96,0.3); }
+    .badge-red    { background: rgba(231,76,60,0.15);  color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+    .badge-yellow { background: rgba(243,156,18,0.15); color: #f39c12; border: 1px solid rgba(243,156,18,0.3); }
+    .badge-purple { background: rgba(123,47,190,0.15); color: var(--lilac); border: 1px solid rgba(123,47,190,0.3); }
+    .badge-blue   { background: rgba(52,152,219,0.15); color: #3498db; border: 1px solid rgba(52,152,219,0.3); }
+
+    /* BUTTONS */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+      border: 1px solid rgba(123,47,190,0.5);
+      color: var(--white); padding: 10px 20px; border-radius: 8px;
+      font-family: var(--font-d); font-size: 12px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: var(--trans);
+      box-shadow: 0 0 16px rgba(123,47,190,0.25);
+      white-space: nowrap;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(123,47,190,0.5); }
+    .btn-sm {
+      padding: 6px 14px; border-radius: 6px;
+      font-family: var(--font-d); font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: var(--trans);
+      border: 1px solid; white-space: nowrap;
+    }
+    .btn-sm.btn-primary { background: linear-gradient(135deg,var(--purple),var(--purple-deep)); border-color: rgba(123,47,190,0.5); color: var(--white); }
+    .btn-sm.btn-green { background: rgba(39,174,96,0.15); border-color: rgba(39,174,96,0.4); color: #2ecc71; }
+    .btn-sm.btn-red   { background: rgba(231,76,60,0.1);  border-color: rgba(231,76,60,0.3); color: #e74c3c; }
+    .btn-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid rgba(123,47,190,0.2);
+      background: rgba(255,255,255,0.03);
+      font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--trans);
+    }
+    .btn-icon:hover { background: rgba(123,47,190,0.15); border-color: rgba(123,47,190,0.4); transform: scale(1.1); }
+    .btn-delete:hover { background: rgba(231,76,60,0.15); border-color: rgba(231,76,60,0.4); }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,3,20,0.88);
+      backdrop-filter: blur(12px);
+      z-index: 2000;
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--purple-mid);
+      border: 1px solid rgba(123,47,190,0.4);
+      border-radius: 20px;
+      width: 100%; max-width: 500px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 0 80px rgba(123,47,190,0.35);
+      animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .modal-lg { max-width: 700px; }
+    @keyframes modalIn { from { opacity:0; transform:translateY(20px) scale(0.97); } }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid rgba(123,47,190,0.2);
+    }
+    .modal-head h3 { font-family: var(--font-d); font-size: 1.1rem; font-weight: 800; }
+    .modal-close-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: none; background: rgba(255,255,255,0.06);
+      color: var(--gray-mid); font-size: 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: var(--trans);
+    }
+    .modal-close-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+    .modal-body { padding: 28px; }
+
+    /* FORM ELEMENTS */
+    .form-group { margin-bottom: 18px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group label {
+      display: block; font-family: var(--font-d);
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--gray-mid); margin-bottom: 8px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(123,47,190,0.25);
+      padding: 11px 14px; border-radius: 8px;
+      font-family: var(--font-b); font-size: 14px; color: var(--white);
+      outline: none; transition: border-color var(--trans);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: rgba(123,47,190,0.7);
+      box-shadow: 0 0 0 3px rgba(123,47,190,0.1);
+    }
+    .form-group input::placeholder, .form-group textarea::placeholder { color: rgba(255,255,255,0.2); }
+    .form-group select option { background: var(--purple-dark); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-check { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+    .form-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--purple); cursor: pointer; }
+    .form-check label { font-size: 13px; color: var(--text-dim); cursor: pointer; margin: 0; letter-spacing: 0; text-transform: none; font-family: var(--font-b); }
+    .form-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding-top: 20px; border-top: 1px solid rgba(123,47,190,0.15);
+      margin-top: 8px;
+    }
+    .btn-cancel {
+      padding: 10px 20px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: none; color: var(--gray-mid);
+      font-family: var(--font-d); font-size: 12px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: var(--trans);
+    }
+    .btn-cancel:hover { border-color: rgba(255,255,255,0.25); color: var(--white); }
+
+    /* SELECT ALUNO */
+    .select-aluno-wrap {
+      display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .select-aluno-wrap select { flex: 1; min-width: 220px; }
+
+    /* STATES */
+    .loading, .empty-state, .error-state {
+      text-align: center; padding: 40px 20px;
+      color: var(--gray-mid); font-size: 14px;
+    }
+    .loading { color: var(--lilac); }
+    .error-state { color: #e74c3c; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+      padding: 14px 22px; border-radius: 10px;
+      font-family: var(--font-d); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.5px;
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast-success { background: rgba(39,174,96,0.95); color: #fff; box-shadow: 0 8px 30px rgba(39,174,96,0.4); }
+    .toast-error   { background: rgba(231,76,60,0.95);  color: #fff; box-shadow: 0 8px 30px rgba(231,76,60,0.4); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     LOGIN SCREEN
+     ════════════════════════════════ -->
+<div id="loginScreen" style="display:flex">
+  <div class="login-box">
+    <div class="login-logo">MedicinaARG</div>
+    <div class="login-sub">Painel Administrador</div>
+    <div class="login-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@email.com" autocomplete="email">
+    </div>
+    <div class="login-group">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Entrar no Painel</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     ADMIN PANEL
+     ════════════════════════════════ -->
+<div id="adminPanel">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <strong>MedicinaARG</strong>
+      <span>Admin Panel</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-sec="usuarios" onclick="loadSection('usuarios')">
+        <span class="nav-icon">👥</span> Usuários
+      </div>
+      <div class="nav-item" data-sec="financeiro" onclick="loadSection('financeiro')">
+        <span class="nav-icon">💳</span> Financeiro
+      </div>
+      <div class="nav-item" data-sec="materias" onclick="loadSection('materias')">
+        <span class="nav-icon">📚</span> Matérias &amp; Conteúdos
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-info">Logado como<span id="adminEmail">—</span></div>
+      <button class="logout-btn" onclick="doLogout()">⬡ Sair</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- ── USUÁRIOS ── -->
+    <div class="section" id="sec-usuarios">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Usuários</div>
+          <div class="page-subtitle">Gerencie os alunos cadastrados na plataforma</div>
+        </div>
+        <button class="btn-primary" onclick="openNewUser()">+ Novo Usuário</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Alunos Cadastrados</span>
+        </div>
+        <div id="userList"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ── FINANCEIRO ── -->
+    <div class="section" id="sec-financeiro">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Financeiro</div>
+          <div class="page-subtitle">Gerencie faturas e pagamentos dos alunos</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Faturas do Aluno</span>
+          <button class="btn-primary" onclick="openNovaFatura()">+ Nova Fatura</button>
+        </div>
+        <div class="select-aluno-wrap">
+          <select id="faturaUserSel" onchange="loadFaturas()">
+            <option value="">— Selecionar aluno —</option>
+          </select>
+        </div>
+        <div id="faturasList"><div class="empty-state">Selecione um aluno para ver as faturas.</div></div>
+      </div>
+    </div>
+
+    <!-- ── MATÉRIAS ── -->
+    <div class="section" id="sec-materias">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Matérias &amp; Conteúdos</div>
+          <div class="page-subtitle">Organize por ano e adicione vídeos, áudios, podcasts e PDFs</div>
+        </div>
+        <button class="btn-primary" onclick="openNewMateria()">+ Nova Matéria</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Matérias por Ano</span>
+        </div>
+        <div id="materiasList"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ════════════════════════════════
+     MODAIS
+     ════════════════════════════════ -->
+
+<!-- Modal: Usuário -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="userModalTitle">Cadastrar Usuário</h3>
+      <button class="modal-close-btn" onclick="closeModal('userModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="userForm" onsubmit="return false;">
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" id="uNome" placeholder="Nome do aluno">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="uEmail" placeholder="email@aluno.com">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="uWhatsapp" placeholder="+55 (11) 99999-9999">
+        </div>
+        <div class="form-group">
+          <label>Ano da Medicina</label>
+          <select id="uAno">
+            <option value="1">1° Ano — Ciclo Básico</option>
+            <option value="2">2° Ano — Ciclo Básico</option>
+            <option value="3">3° Ano — Ciclo Clínico</option>
+            <option value="4">4° Ano — Ciclo Clínico</option>
+            <option value="5">5° Ano — Ciclo Final</option>
+            <option value="6">6° Ano — Internado</option>
+          </select>
+        </div>
+        <div class="form-group" id="userPassGroup">
+          <label>Senha Temporária</label>
+          <input type="password" id="uSenha" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="form-footer">
+          <button class="btn-cancel" type="button" onclick="closeModal('userModal')">Cancelar</button>
+          <button class="btn-primary" id="saveUserBtn" onclick="saveUser()">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nova Fatura -->
+<div class="modal-overlay" id="faturaModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Lançar Fatura</h3>
+      <button class="modal-close-btn" onclick="closeModal('faturaModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="faturaForm" onsubmit="return false;">
+        <div class="form-group">
+          <label>Descrição</label>
+          <input type="text" id="fDescricao" placeholder="Ex: Mensalidade Março 2025">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Valor (R$)</label>
+            <input type="number" id="fValor" placeholder="199.90" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Vencimento</label>
+            <input type="date" id="fVenc">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="aberto">⏳ Em Aberto</option>
+            <option value="pago">✅ Pago</option>
+          </select>
+        </div>
+        <div class="form-footer">
+          <button class="btn-cancel" type="button" onclick="closeModal('faturaModal')">Cancelar</button>
+          <button class="btn-primary" id="saveFaturaBtn" onclick="saveFatura()">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nova/Edit Matéria -->
+<div class="modal-overlay" id="materiaModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="materiaModalTitle">Nova Matéria</h3>
+      <button class="modal-close-btn" onclick="closeModal('materiaModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="materiaForm" onsubmit="return false;">
+        <div class="form-group">
+          <label>Nome da Matéria</label>
+          <input type="text" id="mNome" placeholder="Ex: Anatomia Humana I">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ano da Medicina</label>
+            <select id="mAno">
+              <option value="1">1° Ano</option>
+              <option value="2">2° Ano</option>
+              <option value="3">3° Ano</option>
+              <option value="4">4° Ano</option>
+              <option value="5">5° Ano</option>
+              <option value="6">6° Ano</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ordem de Exibição</label>
+            <input type="number" id="mOrdem" placeholder="1" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea id="mDesc" placeholder="Breve descrição da matéria..."></textarea>
+        </div>
+        <div class="form-footer">
+          <button class="btn-cancel" type="button" onclick="closeModal('materiaModal')">Cancelar</button>
+          <button class="btn-primary" id="saveMateriaBtn" onclick="saveMateria()">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Conteúdos da Matéria -->
+<div class="modal-overlay" id="conteudoModal">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3>📂 <span id="conteudoMateriaTitle">Matéria</span></h3>
+      <button class="modal-close-btn" onclick="closeModal('conteudoModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="conteudoMateriaId">
+      <div style="display:flex; justify-content:flex-end; margin-bottom:20px;">
+        <button class="btn-primary" onclick="openNovoConteudo()">+ Adicionar Conteúdo</button>
+      </div>
+      <div id="conteudoList"><div class="loading">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Conteúdo -->
+<div class="modal-overlay" id="novoConteudoModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Adicionar Conteúdo</h3>
+      <button class="modal-close-btn" onclick="closeModal('novoConteudoModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="conteudoForm" onsubmit="return false;">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="cTitulo" placeholder="Ex: Aula 01 — Introdução à Anatomia">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Conteúdo</label>
+            <select id="cTipo" onchange="toggleDownloadOpt()">
+              <option value="video">🎬 Vídeo</option>
+              <option value="audio">🎧 Áudio</option>
+              <option value="podcast">🎙️ Podcast</option>
+              <option value="pdf">📄 PDF</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ordem</label>
+            <input type="number" id="cOrdem" placeholder="1" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>URL do Conteúdo (ImgBB ou link direto)</label>
+          <input type="url" id="cUrl" placeholder="https://i.ibb.co/...">
+        </div>
+        <div class="form-group" id="downloadOptGroup" style="display:none;">
+          <div class="form-check">
+            <input type="checkbox" id="cDownload">
+            <label for="cDownload">Permitir download pelo aluno</label>
+          </div>
+        </div>
+        <div class="form-footer">
+          <button class="btn-cancel" type="button" onclick="closeModal('novoConteudoModal')">Cancelar</button>
+          <button class="btn-primary" id="saveConteudoBtn" onclick="saveConteudo()">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+</body>
+</html>
