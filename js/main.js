@@ -387,6 +387,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 1000);
   });
 
+  /* ─── BLOG HOME — carrega do Firebase ────── */
+  try {
+    const { getDocs, collection, query, orderBy, where, limit } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const homeBlogGrid = document.getElementById('homeBlogGrid');
+    if (homeBlogGrid) {
+      const snap = await getDocs(query(
+        collection(_db, 'artigos'),
+        where('status', '==', 'publicado'),
+        orderBy('createdAt', 'desc'),
+        limit(4)
+      ));
+      if (snap.empty) {
+        homeBlogGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-mid)">Nenhum artigo publicado ainda.</div>';
+      } else {
+        const arts = [];
+        snap.forEach(d => arts.push({id:d.id,...d.data()}));
+        const [featured, ...rest] = arts;
+        homeBlogGrid.innerHTML = `
+          <article class="blog-card featured reveal">
+            <div class="blog-card-img">
+              ${featured.cover ? `<img src="${featured.cover}" alt="${featured.title}" loading="lazy">` : '<div style="width:100%;height:100%;background:linear-gradient(135deg,rgba(123,47,190,0.3),rgba(74,14,143,0.4));display:flex;align-items:center;justify-content:center;font-size:3rem">📝</div>'}
+              <div class="blog-card-img-overlay"></div>
+            </div>
+            <div class="blog-card-body">
+              <span class="blog-cat">${featured.category||'Geral'} ✦ Destacado</span>
+              <h3>${featured.title}</h3>
+              <p>${featured.summary||''}</p>
+              <div class="blog-meta">
+                <span class="blog-date">${featured.date||''}</span>
+                <a href="artigo.html?id=${featured.id}" class="blog-read">Ler artigo <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+              </div>
+            </div>
+          </article>
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            ${rest.map((a,i) => `
+              <article class="blog-card reveal reveal-d${i+1}">
+                <div class="blog-card-img">
+                  ${a.cover ? `<img src="${a.cover}" alt="${a.title}" loading="lazy">` : '<div style="width:100%;height:100%;background:linear-gradient(135deg,rgba(123,47,190,0.2),rgba(74,14,143,0.3));display:flex;align-items:center;justify-content:center;font-size:2rem">📝</div>'}
+                  <div class="blog-card-img-overlay"></div>
+                </div>
+                <div class="blog-card-body">
+                  <span class="blog-cat">${a.category||'Geral'}</span>
+                  <h3>${a.title}</h3>
+                  <div class="blog-meta">
+                    <span class="blog-date">${a.date||''}</span>
+                    <a href="artigo.html?id=${a.id}" class="blog-read">Ler <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                  </div>
+                </div>
+              </article>`).join('')}
+          </div>`;
+        // trigger reveal
+        document.querySelectorAll('#homeBlogGrid .reveal').forEach(el => {
+          setTimeout(() => el.classList.add('visible'), 200);
+        });
+      }
+    }
+  } catch(e) {
+    console.warn('Blog load error:', e.message);
+  }
+
   /* ─── SMOOTH SCROLL ─────────────────────── */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
