@@ -308,7 +308,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (adminSnap.exists()) {
         btn.textContent = '✓ Admin! Redirecionando...';
         btn.style.background = 'linear-gradient(135deg,#7B2FBE,#4A0E8F)';
-        setTimeout(() => { window.location.href = 'admin.html'; }, 800);
+        // Redireciona imediatamente
+        window.location.replace('admin.html');
         return;
       }
 
@@ -319,7 +320,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (userData.ativo === true) {
           btn.textContent = '✓ Entrando...';
           btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+          // Redireciona imediatamente sem setTimeout
+          window.location.replace('dashboard.html');
           return;
         } else {
           // Conta desativada ou deletada
@@ -450,17 +452,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ─── SMOOTH SCROLL ─────────────────────── */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
-      const href = a.getAttribute('href');
-      // Ignora links que são só "#" ou que têm data-modal
-      if (!href || href === '#' || a.hasAttribute('data-modal')) return;
       try {
-        const target = document.querySelector(href);
-        if (target) {
+        const href = a.getAttribute('href');
+        if (!href || href === '#' || href === '#!' || a.hasAttribute('data-modal')) {
           e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+        if (href.startsWith('#') && href.length > 1) {
+          const target = document.getElementById(href.slice(1));
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         }
       } catch(err) {
-        // selector inválido, ignora
+        // ignora erros de selector
       }
     });
   });
