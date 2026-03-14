@@ -271,56 +271,62 @@
 
   let currentUser = null;
   let userData    = null;
+  let initialized = false;
 
-  /* ── AUTH ── */
-  let authResolved = false;
-
-  // Timeout de segurança — se Firebase demorar demais, redireciona
-  const authTimeout = setTimeout(() => {
-    if (!authResolved) window.location.href = 'index.html';
-  }, 8000);
+  /* ── AUTH ── 
+     O Firebase demora um momento para restaurar a sessão.
+     Esperamos 3 segundos antes de redirecionar caso não haja usuário.
+  */
+  let redirectTimer = null;
 
   onAuthStateChanged(auth, async user => {
-    authResolved = true;
-    clearTimeout(authTimeout);
+    // Cancela qualquer redirect pendente
+    if (redirectTimer) { clearTimeout(redirectTimer); redirectTimer = null; }
+
+    // Já inicializou — ignora chamadas extras
+    if (initialized) return;
 
     if (!user) {
-      // Pequeno delay pra garantir que o Firebase carregou a sessão
-      setTimeout(() => { window.location.href = 'index.html'; }, 500);
+      // Aguarda 3s antes de mandar pro login
+      // (dá tempo do Firebase restaurar a sessão)
+      redirectTimer = setTimeout(() => {
+        window.location.replace('index.html');
+      }, 3000);
       return;
     }
 
+    // Tem usuário — cancela redirect e carrega
+    initialized = true;
     currentUser = user;
 
     try {
-      // Verifica se está ativo no Firestore
       const snap = await getDoc(doc(db, 'users', user.uid));
 
       if (!snap.exists()) {
-        // Pode ser admin — verifica
+        // Checa se é admin
         const adminSnap = await getDoc(doc(db, 'admins', user.uid));
         if (adminSnap.exists()) {
-          // É admin, redireciona pro painel admin
-          window.location.href = 'admin.html';
+          window.location.replace('admin.html');
           return;
         }
-        await signOut(auth);
-        window.location.href = 'index.html';
+        // Carrega com dados básicos
+        userData = { nome: user.email, ano: '1' };
+        initDashboard();
         return;
       }
 
-      if (!snap.data().ativo) {
+      if (snap.data().ativo === false) {
         await signOut(auth);
-        window.location.href = 'index.html';
+        window.location.replace('index.html');
         return;
       }
 
       userData = snap.data();
       initDashboard();
+
     } catch(e) {
-      console.error('Auth error:', e);
-      // Em caso de erro de permissão, tenta carregar mesmo assim
-      userData = { nome: 'Aluno', ano: '1' };
+      console.error('Firestore error:', e.code, e.message);
+      userData = { nome: user.displayName || user.email || 'Aluno', ano: '1' };
       initDashboard();
     }
   });
