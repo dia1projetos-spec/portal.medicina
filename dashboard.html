@@ -8,38 +8,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --purple:#7B2FBE; --purple-deep:#4A0E8F; --purple-dark:#1A0530;
-      --purple-mid:#2D0B5A; --violet:#9D4EDD; --lilac:#C77DFF;
-      --white:#FFFFFF; --gray-mid:#9B8FB0; --text-dim:#C4B8D9;
-      --green:#27ae60; --red:#e74c3c; --yellow:#f39c12;
-      --font-d:'Syne',sans-serif; --font-b:'Outfit',sans-serif;
-      --sidebar-w:260px; --trans:0.25s cubic-bezier(0.4,0,0.2,1);
-    }
+    :root{--purple:#7B2FBE;--purple-deep:#4A0E8F;--purple-dark:#1A0530;--purple-mid:#2D0B5A;--violet:#9D4EDD;--lilac:#C77DFF;--white:#FFFFFF;--gray-mid:#9B8FB0;--text-dim:#C4B8D9;--green:#27ae60;--red:#e74c3c;--yellow:#f39c12;--font-d:'Syne',sans-serif;--font-b:'Outfit',sans-serif;--sidebar-w:260px;--trans:0.25s cubic-bezier(0.4,0,0.2,1)}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%}
     body{font-family:var(--font-b);background:var(--purple-dark);color:var(--white);overflow-x:hidden}
     a{text-decoration:none;color:inherit}
     button{border:none;background:none;font-family:inherit;cursor:pointer}
-
-    /* LOADING SCREEN */
     #loadingScreen{position:fixed;inset:0;background:var(--purple-dark);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
     .loading-logo{font-family:var(--font-d);font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--white),var(--lilac));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .loading-bar{width:200px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
-    .loading-bar-inner{height:100%;background:linear-gradient(90deg,var(--purple),var(--lilac));animation:loadbar 1.5s ease-in-out infinite}
-    @keyframes loadbar{0%{width:0%;margin-left:0}50%{width:70%}100%{width:0%;margin-left:100%}}
-
-    /* LAYOUT */
+    .loading-bar-inner{height:100%;background:linear-gradient(90deg,var(--purple),var(--lilac));animation:lb 1.5s ease-in-out infinite}
+    @keyframes lb{0%{width:0%;margin-left:0}50%{width:70%}100%{width:0%;margin-left:100%}}
     #dashPanel{display:none;min-height:100vh;flex-direction:row}
-
-    /* SIDEBAR */
-    .dash-sidebar{
-      width:var(--sidebar-w);min-height:100vh;
-      background:rgba(13,2,32,0.95);
-      border-right:1px solid rgba(123,47,190,0.2);
-      display:flex;flex-direction:column;
-      position:fixed;top:0;left:0;bottom:0;z-index:100;
-    }
+    .dash-sidebar{width:var(--sidebar-w);min-height:100vh;background:rgba(13,2,32,0.95);border-right:1px solid rgba(123,47,190,0.2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
     .sidebar-logo{padding:28px 24px 20px;border-bottom:1px solid rgba(123,47,190,0.15)}
     .sidebar-logo strong{font-family:var(--font-d);font-size:1.2rem;font-weight:800;background:linear-gradient(135deg,var(--white),var(--lilac));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block}
     .sidebar-logo span{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray-mid)}
@@ -47,33 +28,20 @@
     .dash-nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;font-family:var(--font-d);font-size:13px;font-weight:600;color:var(--gray-mid);cursor:pointer;transition:var(--trans);border:1px solid transparent}
     .dash-nav-item:hover{background:rgba(123,47,190,0.1);color:var(--white)}
     .dash-nav-item.active{background:linear-gradient(135deg,rgba(123,47,190,0.25),rgba(74,14,143,0.2));border-color:rgba(123,47,190,0.35);color:var(--lilac)}
-    .dash-nav-item .nav-icon{font-size:18px;width:24px;text-align:center}
+    .nav-icon{font-size:18px;width:24px;text-align:center}
     .sidebar-footer{padding:20px 24px;border-top:1px solid rgba(123,47,190,0.15)}
     .user-greeting{font-size:11px;color:var(--gray-mid);margin-bottom:4px}
     .user-name{font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--white);margin-bottom:12px;display:block}
     .logout-btn{width:100%;padding:10px;background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.25);border-radius:8px;color:#e74c3c;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:var(--trans)}
     .logout-btn:hover{background:rgba(231,76,60,0.25)}
-
-    /* MAIN */
     .dash-main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;padding:36px;overflow-y:auto}
     .section{display:none}
-    .page-header{margin-bottom:32px}
     .page-title{font-family:var(--font-d);font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--white),var(--lilac));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .page-subtitle{font-size:13px;color:var(--gray-mid);margin-top:4px}
-
-    /* WELCOME CARD */
-    .welcome-card{
-      background:linear-gradient(135deg,rgba(123,47,190,0.2),rgba(74,14,143,0.25));
-      border:1px solid rgba(123,47,190,0.35);
-      border-radius:20px;padding:36px;margin-bottom:28px;
-      position:relative;overflow:hidden;
-    }
-    .welcome-card::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(199,125,255,0.12) 0%,transparent 70%);pointer-events:none}
+    .page-subtitle{font-size:13px;color:var(--gray-mid);margin-top:4px;margin-bottom:28px}
+    .welcome-card{background:linear-gradient(135deg,rgba(123,47,190,0.2),rgba(74,14,143,0.25));border:1px solid rgba(123,47,190,0.35);border-radius:20px;padding:36px;margin-bottom:28px;position:relative;overflow:hidden}
     .welcome-card h2{font-family:var(--font-d);font-size:1.6rem;font-weight:800;color:var(--white);margin-bottom:8px}
     .welcome-card p{font-size:14px;color:var(--text-dim);line-height:1.6}
     .welcome-ano{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-deep));padding:6px 16px;border-radius:50px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:16px}
-
-    /* CARDS GRID */
     .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
     .info-card{background:rgba(255,255,255,0.03);border:1px solid rgba(123,47,190,0.15);border-radius:14px;padding:24px;position:relative;overflow:hidden;transition:var(--trans)}
     .info-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--lilac))}
@@ -81,44 +49,35 @@
     .info-card-icon{font-size:2rem;margin-bottom:12px}
     .info-card-val{font-family:var(--font-d);font-size:1.6rem;font-weight:800;color:var(--lilac)}
     .info-card-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-mid);margin-top:4px}
-
-    /* MATÉRIAS */
     .ano-group{margin-bottom:36px}
     .ano-title{font-family:var(--font-d);font-size:1rem;font-weight:700;color:var(--lilac);margin-bottom:16px;display:flex;align-items:center;gap:12px}
     .ano-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(123,47,190,0.3),transparent)}
     .materias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
     .materia-card{background:rgba(255,255,255,0.03);border:1px solid rgba(123,47,190,0.15);border-radius:14px;padding:20px;cursor:pointer;transition:var(--trans)}
-    .materia-card:hover{border-color:rgba(123,47,190,0.45);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,0.4),0 0 24px rgba(123,47,190,0.15)}
+    .materia-card:hover{border-color:rgba(123,47,190,0.45);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,0.4)}
     .materia-card h4{font-family:var(--font-d);font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:8px}
     .materia-card p{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:14px}
     .materia-meta{display:flex;align-items:center;justify-content:space-between}
     .materia-count{font-size:11px;color:var(--gray-mid)}
-    .materia-btn{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--lilac);background:rgba(123,47,190,0.12);border:1px solid rgba(123,47,190,0.25);padding:5px 12px;border-radius:20px;cursor:pointer;transition:var(--trans)}
-    .materia-btn:hover{background:rgba(123,47,190,0.25)}
-
-    /* CONTEÚDOS VIEWER */
-    .conteudo-viewer{display:none}
+    .materia-btn{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--lilac);background:rgba(123,47,190,0.12);border:1px solid rgba(123,47,190,0.25);padding:5px 12px;border-radius:20px;cursor:pointer}
     .viewer-back{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray-mid);cursor:pointer;margin-bottom:28px;transition:color 0.25s;background:none;border:none}
     .viewer-back:hover{color:var(--lilac)}
-    .conteudo-item{background:rgba(255,255,255,0.03);border:1px solid rgba(123,47,190,0.15);border-radius:14px;padding:20px;margin-bottom:12px;transition:var(--trans)}
-    .conteudo-item:hover{border-color:rgba(123,47,190,0.35)}
-    .conteudo-header{display:flex;align-items:center;gap:14px;margin-bottom:0;cursor:pointer}
-    .conteudo-tipo-badge{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;flex-shrink:0}
+    .conteudo-item{background:rgba(255,255,255,0.03);border:1px solid rgba(123,47,190,0.15);border-radius:14px;padding:20px;margin-bottom:12px}
+    .conteudo-header{display:flex;align-items:center;gap:14px;cursor:pointer}
+    .tipo-badge{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;flex-shrink:0}
     .badge-video{background:rgba(52,152,219,0.15);color:#3498db;border:1px solid rgba(52,152,219,0.3)}
     .badge-audio{background:rgba(39,174,96,0.15);color:#2ecc71;border:1px solid rgba(39,174,96,0.3)}
     .badge-podcast{background:rgba(155,89,182,0.15);color:#9b59b6;border:1px solid rgba(155,89,182,0.3)}
     .badge-pdf{background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3)}
     .conteudo-title{font-family:var(--font-d);font-size:0.9rem;font-weight:700;color:var(--white);flex:1}
     .conteudo-num{font-family:var(--font-d);font-size:1.2rem;font-weight:800;color:rgba(123,47,190,0.4);flex-shrink:0}
+    .conteudo-arrow{color:var(--gray-mid);font-size:18px;transition:transform 0.3s;flex-shrink:0}
     .conteudo-player{margin-top:16px;display:none}
     .conteudo-player.open{display:block}
     .conteudo-player video,.conteudo-player audio{width:100%;border-radius:10px;background:#000;outline:none}
     .conteudo-player iframe{width:100%;height:420px;border-radius:10px;border:none}
     .pdf-viewer{width:100%;height:500px;border-radius:10px;border:1px solid rgba(123,47,190,0.25)}
     .download-btn{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:8px 16px;border-radius:8px;background:rgba(39,174,96,0.12);border:1px solid rgba(39,174,96,0.3);color:#2ecc71;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:var(--trans);text-decoration:none}
-    .download-btn:hover{background:rgba(39,174,96,0.25)}
-
-    /* FATURAS */
     .fatura-item{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-radius:12px;margin-bottom:10px;border:1px solid;flex-wrap:wrap;gap:12px}
     .fatura-aberta{background:rgba(243,156,18,0.06);border-color:rgba(243,156,18,0.25)}
     .fatura-paga{background:rgba(39,174,96,0.06);border-color:rgba(39,174,96,0.2)}
@@ -128,297 +87,196 @@
     .badge{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;white-space:nowrap}
     .badge-green{background:rgba(39,174,96,0.15);color:#2ecc71;border:1px solid rgba(39,174,96,0.3)}
     .badge-yellow{background:rgba(243,156,18,0.15);color:#f39c12;border:1px solid rgba(243,156,18,0.3)}
-
-    /* EMPTY/LOADING */
     .dash-loading,.dash-empty{text-align:center;padding:60px 20px;color:var(--gray-mid);font-size:14px}
     .dash-loading{color:var(--lilac)}
-
-    /* TOAST */
-    .toast{position:fixed;bottom:32px;right:32px;z-index:9999;padding:14px 22px;border-radius:10px;font-family:var(--font-d);font-size:13px;font-weight:700;opacity:0;transform:translateY(12px);transition:opacity 0.3s,transform 0.3s;pointer-events:none}
-    .toast.show{opacity:1;transform:translateY(0)}
-    .toast-success{background:rgba(39,174,96,0.95);color:#fff;box-shadow:0 8px 30px rgba(39,174,96,0.4)}
-
-    /* RESPONSIVE */
-    @media(max-width:768px){
-      .dash-sidebar{transform:translateX(-100%);transition:transform 0.3s}
-      .dash-sidebar.open{transform:translateX(0)}
-      .dash-main{margin-left:0;padding:20px 16px}
-      .mobile-menu-btn{display:flex!important}
-    }
-    .mobile-menu-btn{display:none;position:fixed;top:16px;left:16px;z-index:200;width:44px;height:44px;border-radius:12px;background:rgba(26,5,48,0.95);border:1px solid rgba(123,47,190,0.3);align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--white)}
+    @media(max-width:768px){.dash-sidebar{transform:translateX(-100%);transition:transform 0.3s}.dash-sidebar.open{transform:translateX(0)}.dash-main{margin-left:0;padding:20px 16px}.mob-btn{display:flex!important}}
+    .mob-btn{display:none;position:fixed;top:16px;left:16px;z-index:200;width:44px;height:44px;border-radius:12px;background:rgba(26,5,48,0.95);border:1px solid rgba(123,47,190,0.3);align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--white)}
   </style>
 </head>
 <body>
 
-<!-- LOADING -->
 <div id="loadingScreen">
   <div class="loading-logo">MedicinaARG</div>
   <div class="loading-bar"><div class="loading-bar-inner"></div></div>
 </div>
 
-<!-- MOBILE MENU BTN -->
-<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">☰</button>
+<button class="mob-btn" onclick="document.getElementById('dashSidebar').classList.toggle('open')">☰</button>
 
-<!-- DASHBOARD -->
 <div id="dashPanel">
-
-  <!-- SIDEBAR -->
   <aside class="dash-sidebar" id="dashSidebar">
     <div class="sidebar-logo">
       <strong>MedicinaARG</strong>
       <span>Área do Aluno</span>
     </div>
     <nav class="dash-nav">
-      <div class="dash-nav-item active" data-sec="inicio" onclick="showSection('inicio')">
-        <span class="nav-icon">🏠</span> Início
-      </div>
-      <div class="dash-nav-item" data-sec="materias" onclick="showSection('materias')">
-        <span class="nav-icon">📚</span> Matérias
-      </div>
-      <div class="dash-nav-item" data-sec="financeiro" onclick="showSection('financeiro')">
-        <span class="nav-icon">💳</span> Financeiro
-      </div>
-      <div class="dash-nav-item" data-sec="blog" onclick="window.location.href='blog.html'">
-        <span class="nav-icon">📰</span> Blog
-      </div>
+      <div class="dash-nav-item active" data-sec="inicio" onclick="showSection('inicio')"><span class="nav-icon">🏠</span>Início</div>
+      <div class="dash-nav-item" data-sec="materias" onclick="showSection('materias')"><span class="nav-icon">📚</span>Matérias</div>
+      <div class="dash-nav-item" data-sec="financeiro" onclick="showSection('financeiro')"><span class="nav-icon">💳</span>Financeiro</div>
+      <div class="dash-nav-item" onclick="window.location.href='blog.html'"><span class="nav-icon">📰</span>Blog</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-greeting">Bem-vindo/a,</div>
       <span class="user-name" id="userName">—</span>
-      <button class="logout-btn" onclick="doLogout()">⬡ Sair</button>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
+  </div>
   </aside>
 
-  <!-- MAIN -->
   <main class="dash-main">
-
-    <!-- INÍCIO -->
     <div class="section" id="sec-inicio">
       <div class="welcome-card">
         <h2>Olá, <span id="welcomeName">aluno</span>! 👋</h2>
-        <p>Bem-vindo/a à sua área de estudos. Acesse suas matérias, acompanhe seus pagamentos e muito mais.</p>
+        <p>Bem-vindo/a à sua área de estudos. Acesse suas matérias e acompanhe seus pagamentos.</p>
         <span class="welcome-ano" id="welcomeAno">1° Ano</span>
       </div>
       <div class="cards-grid">
-        <div class="info-card">
-          <div class="info-card-icon">📚</div>
-          <div class="info-card-val" id="statMaterias">—</div>
-          <div class="info-card-label">Matérias disponíveis</div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-icon">💳</div>
-          <div class="info-card-val" id="statFaturas">—</div>
-          <div class="info-card-label">Faturas em aberto</div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-icon">🎬</div>
-          <div class="info-card-val" id="statConteudos">—</div>
-          <div class="info-card-label">Conteúdos disponíveis</div>
-        </div>
+        <div class="info-card"><div class="info-card-icon">📚</div><div class="info-card-val" id="statMaterias">—</div><div class="info-card-label">Matérias</div></div>
+        <div class="info-card"><div class="info-card-icon">💳</div><div class="info-card-val" id="statFaturas">—</div><div class="info-card-label">Faturas em aberto</div></div>
+        <div class="info-card"><div class="info-card-icon">🎬</div><div class="info-card-val" id="statConteudos">—</div><div class="info-card-label">Conteúdos</div></div>
       </div>
     </div>
 
-    <!-- MATÉRIAS -->
     <div class="section" id="sec-materias">
-      <div class="page-header">
-        <div class="page-title">Minhas Matérias</div>
-        <div class="page-subtitle">Conteúdos organizados por ano e matéria</div>
-      </div>
+      <div class="page-title">Minhas Matérias</div>
+      <div class="page-subtitle">Conteúdos organizados por ano e matéria</div>
       <div id="materiasView">
-        <div id="materiasList"><div class="dash-loading">Carregando matérias...</div></div>
+        <div id="materiasList"><div class="dash-loading">Carregando...</div></div>
       </div>
-      <div class="conteudo-viewer" id="conteudoViewer">
-        <button class="viewer-back" onclick="backToMaterias()">← Voltar às matérias</button>
-        <div class="page-header">
-          <div class="page-title" id="viewerTitle">—</div>
-          <div class="page-subtitle" id="viewerDesc">—</div>
-        </div>
-        <div id="conteudoList"><div class="dash-loading">Carregando...</div></div>
+      <div id="conteudoViewer" style="display:none">
+        <button class="viewer-back" onclick="backToMaterias()">← Voltar</button>
+        <div class="page-title" id="viewerTitle">—</div>
+        <div class="page-subtitle" id="viewerDesc"></div>
+        <div id="conteudoList"></div>
       </div>
     </div>
 
-    <!-- FINANCEIRO -->
     <div class="section" id="sec-financeiro">
-      <div class="page-header">
-        <div class="page-title">Financeiro</div>
-        <div class="page-subtitle">Histórico de faturas e pagamentos</div>
-      </div>
+      <div class="page-title">Financeiro</div>
+      <div class="page-subtitle">Histórico de faturas e pagamentos</div>
       <div id="faturasList"><div class="dash-loading">Carregando...</div></div>
     </div>
-
   </main>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script type="module">
-  // Usando top-level await via IIFE
-  (async () => {
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const app  = initializeApp({
-    apiKey:"AIzaSyCqzdQNpZi27nsnmD1XAP-9hXcJiHqVzOM",
-    authDomain:"medicinaargv.firebaseapp.com",
-    projectId:"medicinaargv",
-    storageBucket:"medicinaargv.firebasestorage.app",
-    messagingSenderId:"443649777294",
-    appId:"1:443649777294:web:d44592a81fbf091cb5f3df"
-  });
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
+const FB = {
+  apiKey:"AIzaSyCqzdQNpZi27nsnmD1XAP-9hXcJiHqVzOM",
+  authDomain:"medicinaargv.firebaseapp.com",
+  projectId:"medicinaargv",
+  storageBucket:"medicinaargv.firebasestorage.app",
+  messagingSenderId:"443649777294",
+  appId:"1:443649777294:web:d44592a81fbf091cb5f3df"
+};
 
-  // Garante persistência da sessão
-  await setPersistence(auth, browserLocalPersistence);
+const app  = initializeApp(FB, 'dash');
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-  let currentUser = null;
-  let userData    = null;
-  let initialized = false;
+let ME = null;
+let MY = null;
 
-  /* ── AUTH ── 
-     O Firebase demora um momento para restaurar a sessão.
-     Esperamos 3 segundos antes de redirecionar caso não haja usuário.
-  */
-  let redirectTimer = null;
+// Garante persistência local
+setPersistence(auth, browserLocalPersistence).then(() => {
 
   onAuthStateChanged(auth, async user => {
-    // Cancela qualquer redirect pendente
-    if (redirectTimer) { clearTimeout(redirectTimer); redirectTimer = null; }
-
-    // Já inicializou — ignora chamadas extras
-    if (initialized) return;
-
     if (!user) {
-      // Aguarda 3s antes de mandar pro login
-      // (dá tempo do Firebase restaurar a sessão)
-      redirectTimer = setTimeout(() => {
-        window.location.replace('index.html');
-      }, 3000);
+      // Sem sessão — vai pro login
+      window.location.replace('index.html');
       return;
     }
 
-    // Tem usuário — cancela redirect e carrega
-    initialized = true;
-    currentUser = user;
+    ME = user;
 
     try {
       const snap = await getDoc(doc(db, 'users', user.uid));
 
       if (!snap.exists()) {
-        // Checa se é admin
-        const adminSnap = await getDoc(doc(db, 'admins', user.uid));
-        if (adminSnap.exists()) {
-          window.location.replace('admin.html');
-          return;
-        }
-        // Carrega com dados básicos
-        userData = { nome: user.email, ano: '1' };
-        initDashboard();
+        // Checa admin
+        const adm = await getDoc(doc(db, 'admins', user.uid));
+        if (adm.exists()) { window.location.replace('admin.html'); return; }
+        MY = { nome: user.email, ano: '1' };
+        boot();
         return;
       }
 
-      if (snap.data().ativo === false) {
+      const d = snap.data();
+      if (d.ativo === false) {
         await signOut(auth);
         window.location.replace('index.html');
         return;
       }
 
-      userData = snap.data();
-      initDashboard();
+      MY = d;
+      boot();
 
     } catch(e) {
-      console.error('Firestore error:', e.code, e.message);
-      userData = { nome: user.displayName || user.email || 'Aluno', ano: '1' };
-      initDashboard();
+      console.error(e);
+      MY = { nome: user.email || 'Aluno', ano: '1' };
+      boot();
     }
   });
 
-  function initDashboard() {
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('dashPanel').style.display = 'flex';
-    document.getElementById('userName').textContent     = userData.nome || 'Aluno';
-    document.getElementById('welcomeName').textContent  = (userData.nome || 'aluno').split(' ')[0];
-    document.getElementById('welcomeAno').textContent   = userData.ano + '° Ano de Medicina';
-    showSection('inicio');
-    loadStats();
-  }
+});
 
-  async function loadStats() {
-    // Matérias do ano do aluno
-    const mSnap = await getDocs(query(collection(db,'materias'), orderBy('ordem')));
-    let totalMat = 0, totalCont = 0;
-    mSnap.forEach(d => {
-      if (d.data().ano == userData.ano) {
-        totalMat++;
-        totalCont += d.data().totalConteudos || 0;
-      }
-    });
-    document.getElementById('statMaterias').textContent  = totalMat;
-    document.getElementById('statConteudos').textContent = totalCont;
+function boot() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('dashPanel').style.display     = 'flex';
+  document.getElementById('userName').textContent        = MY.nome || 'Aluno';
+  document.getElementById('welcomeName').textContent     = (MY.nome||'Aluno').split(' ')[0];
+  document.getElementById('welcomeAno').textContent      = (MY.ano||'1') + '° Ano de Medicina';
+  showSection('inicio');
+  loadStats();
+}
 
-    // Faturas em aberto
-    const fSnap = await getDocs(collection(db,'users',currentUser.uid,'faturas'));
-    let abertas = 0;
-    fSnap.forEach(d => { if (d.data().status !== 'pago') abertas++; });
-    document.getElementById('statFaturas').textContent = abertas;
-  }
+async function loadStats() {
+  try {
+    const ms = await getDocs(query(collection(db,'materias'), orderBy('ordem')));
+    let mat=0, cont=0;
+    ms.forEach(d => { if(d.data().ano==MY.ano){mat++; cont+=d.data().totalConteudos||0;} });
+    document.getElementById('statMaterias').textContent  = mat;
+    document.getElementById('statConteudos').textContent = cont;
+    const fs = await getDocs(collection(db,'users',ME.uid,'faturas'));
+    let ab=0; fs.forEach(d=>{ if(d.data().status!=='pago') ab++; });
+    document.getElementById('statFaturas').textContent = ab;
+  } catch(e){ console.warn(e); }
+}
 
-  /* ── NAVEGAÇÃO ── */
-  window.showSection = (sec) => {
-    document.querySelectorAll('.section').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.dash-nav-item').forEach(el =>
-      el.classList.toggle('active', el.dataset.sec === sec));
-    document.getElementById('sec-' + sec).style.display = 'block';
-    if (sec === 'materias')   loadMaterias();
-    if (sec === 'financeiro') loadFaturas();
-    // close mobile sidebar
-    document.getElementById('dashSidebar').classList.remove('open');
-  };
+window.showSection = sec => {
+  document.querySelectorAll('.section').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.dash-nav-item').forEach(el=>el.classList.toggle('active',el.dataset.sec===sec));
+  document.getElementById('sec-'+sec).style.display='block';
+  if(sec==='materias')   loadMaterias();
+  if(sec==='financeiro') loadFaturas();
+  document.getElementById('dashSidebar').classList.remove('open');
+};
 
-  window.toggleSidebar = () => {
-    document.getElementById('dashSidebar').classList.toggle('open');
-  };
-
-  /* ── MATÉRIAS ── */
-  async function loadMaterias() {
-    document.getElementById('materiasView').style.display   = 'block';
-    document.getElementById('conteudoViewer').style.display = 'none';
-    const list = document.getElementById('materiasList');
-    list.innerHTML = '<div class="dash-loading">Carregando matérias...</div>';
-
-    const snap = await getDocs(query(collection(db,'materias'), orderBy('ordem')));
+async function loadMaterias() {
+  document.getElementById('materiasView').style.display   = 'block';
+  document.getElementById('conteudoViewer').style.display = 'none';
+  const list = document.getElementById('materiasList');
+  list.innerHTML = '<div class="dash-loading">Carregando...</div>';
+  try {
+    const snap = await getDocs(query(collection(db,'materias'),orderBy('ordem')));
     const byAno = {};
     snap.forEach(d => {
       const m = d.data();
-      if (!byAno[m.ano]) byAno[m.ano] = [];
+      if(!byAno[m.ano]) byAno[m.ano]=[];
       byAno[m.ano].push({id:d.id,...m});
     });
-
-    if (!Object.keys(byAno).length) {
-      list.innerHTML = '<div class="dash-empty">Nenhuma matéria disponível ainda.</div>';
-      return;
-    }
-
-    // Mostra apenas o ano do aluno primeiro, depois os outros
-    const anos = Object.keys(byAno).sort((a,b) => {
-      if (a == userData.ano) return -1;
-      if (b == userData.ano) return 1;
-      return a - b;
-    });
-
-    list.innerHTML = anos.map(ano => `
+    if(!Object.keys(byAno).length){ list.innerHTML='<div class="dash-empty">Nenhuma matéria disponível ainda.</div>'; return; }
+    const anos = Object.keys(byAno).sort((a,b)=> a==MY.ano?-1: b==MY.ano?1: a-b);
+    list.innerHTML = anos.map(ano=>`
       <div class="ano-group">
-        <div class="ano-title">
-          ${ano == userData.ano ? '⭐ ' : ''}${ano}° Ano${ano == userData.ano ? ' — Seu Ano' : ''}
-        </div>
+        <div class="ano-title">${ano==MY.ano?'⭐ ':''}${ano}° Ano${ano==MY.ano?' — Seu Ano':''}</div>
         <div class="materias-grid">
-          ${byAno[ano].map(m => `
-            <div class="materia-card" onclick="openMateria('${m.id}','${m.nome}','${m.descricao||''}')">
+          ${byAno[ano].map(m=>`
+            <div class="materia-card" onclick="openMateria('${m.id}','${m.nome.replace(/'/g,"\\'")}','${(m.descricao||'').replace(/'/g,"\\'")}')">
               <h4>${m.nome}</h4>
-              <p>${m.descricao || 'Conteúdos de ' + m.nome}</p>
+              <p>${m.descricao||'Conteúdos de '+m.nome}</p>
               <div class="materia-meta">
                 <span class="materia-count">${m.totalConteudos||0} conteúdos</span>
                 <span class="materia-btn">Acessar →</span>
@@ -426,111 +284,83 @@
             </div>`).join('')}
         </div>
       </div>`).join('');
-  }
+  } catch(e){ list.innerHTML='<div class="dash-empty">Erro ao carregar: '+e.message+'</div>'; }
+}
 
-  window.openMateria = async (id, nome, desc) => {
-    document.getElementById('materiasView').style.display   = 'none';
-    document.getElementById('conteudoViewer').style.display = 'block';
-    document.getElementById('viewerTitle').textContent = nome;
-    document.getElementById('viewerDesc').textContent  = desc || '';
-
-    const list = document.getElementById('conteudoList');
-    list.innerHTML = '<div class="dash-loading">Carregando conteúdos...</div>';
-
-    const snap = await getDocs(query(
-      collection(db,'materias',id,'conteudos'), orderBy('ordem')
-    ));
-
-    if (snap.empty) { list.innerHTML = '<div class="dash-empty">Nenhum conteúdo disponível ainda.</div>'; return; }
-
-    const icons = {video:'🎬',audio:'🎧',podcast:'🎙️',pdf:'📄'};
-    list.innerHTML = '';
-    snap.forEach(d => {
-      const c = d.data();
-      const badgeClass = 'badge-' + c.tipo;
-      const div = document.createElement('div');
-      div.className = 'conteudo-item';
-      div.innerHTML = `
-        <div class="conteudo-header" onclick="toggleConteudo('player-${d.id}', '${c.tipo}', '${c.url}', ${c.permitirDownload||false})">
+window.openMateria = async (id, nome, desc) => {
+  document.getElementById('materiasView').style.display   = 'none';
+  document.getElementById('conteudoViewer').style.display = 'block';
+  document.getElementById('viewerTitle').textContent = nome;
+  document.getElementById('viewerDesc').textContent  = desc||'';
+  const list = document.getElementById('conteudoList');
+  list.innerHTML = '<div class="dash-loading">Carregando...</div>';
+  try {
+    const snap = await getDocs(query(collection(db,'materias',id,'conteudos'),orderBy('ordem')));
+    if(snap.empty){ list.innerHTML='<div class="dash-empty">Nenhum conteúdo ainda.</div>'; return; }
+    list.innerHTML='';
+    const icons={video:'🎬',audio:'🎧',podcast:'🎙️',pdf:'📄'};
+    snap.forEach(d=>{
+      const c=d.data();
+      const div=document.createElement('div');
+      div.className='conteudo-item';
+      div.innerHTML=`
+        <div class="conteudo-header" onclick="togglePlayer('p${d.id}','${c.tipo}','${encodeURIComponent(c.url||'')}',${!!c.permitirDownload})">
           <span class="conteudo-num">#${c.ordem}</span>
-          <span class="conteudo-tipo-badge ${badgeClass}">${icons[c.tipo]||'📎'} ${c.tipo}</span>
+          <span class="tipo-badge badge-${c.tipo}">${icons[c.tipo]||'📎'} ${c.tipo}</span>
           <span class="conteudo-title">${c.titulo}</span>
-          <span style="color:var(--gray-mid);font-size:18px;transition:transform 0.3s" id="arr-${d.id}">▸</span>
+          <span class="conteudo-arrow" id="a${d.id}">▸</span>
         </div>
-        <div class="conteudo-player" id="player-${d.id}"></div>`;
+        <div class="conteudo-player" id="p${d.id}"></div>`;
       list.appendChild(div);
     });
-  };
+  } catch(e){ list.innerHTML='<div class="dash-empty">Erro: '+e.message+'</div>'; }
+};
 
-  window.toggleConteudo = (playerId, tipo, url, permitirDownload) => {
-    const player = document.getElementById(playerId);
-    const arrId  = playerId.replace('player-', 'arr-');
-    const arr    = document.getElementById(arrId);
-    const isOpen = player.classList.contains('open');
-
-    // Fecha todos os outros
-    document.querySelectorAll('.conteudo-player.open').forEach(p => {
-      p.classList.remove('open');
-      p.innerHTML = '';
-    });
-    document.querySelectorAll('[id^="arr-"]').forEach(a => a.style.transform='rotate(0deg)');
-
-    if (!isOpen) {
-      player.classList.add('open');
-      arr.style.transform = 'rotate(90deg)';
-
-      if (tipo === 'video') {
-        player.innerHTML = `
-          <video controls style="width:100%;border-radius:10px;background:#000;max-height:480px">
-            <source src="${url}" type="video/mp4">
-            <source src="${url}" type="video/webm">
-            Seu navegador não suporta vídeo.
-          </video>`;
-      } else if (tipo === 'audio' || tipo === 'podcast') {
-        player.innerHTML = `
-          <audio controls><source src="${url}">Seu navegador não suporta áudio.</audio>
-          ${permitirDownload ? `<a class="download-btn" href="${url}" download target="_blank">⬇️ Baixar ${tipo}</a>` : ''}`;
-      } else if (tipo === 'pdf') {
-        player.innerHTML = `<iframe class="pdf-viewer" src="${url}"></iframe>`;
-      }
+window.togglePlayer = (pid, tipo, urlEnc, dl) => {
+  const url    = decodeURIComponent(urlEnc);
+  const player = document.getElementById(pid);
+  const arrow  = document.getElementById('a'+pid.slice(1));
+  const isOpen = player.classList.contains('open');
+  document.querySelectorAll('.conteudo-player.open').forEach(p=>{ p.classList.remove('open'); p.innerHTML=''; });
+  document.querySelectorAll('.conteudo-arrow').forEach(a=>a.style.transform='');
+  if(!isOpen){
+    player.classList.add('open');
+    arrow.style.transform='rotate(90deg)';
+    if(tipo==='video'){
+      player.innerHTML=`<video controls style="width:100%;border-radius:10px;max-height:480px"><source src="${url}" type="video/mp4">Navegador sem suporte.</video>`;
+    } else if(tipo==='audio'||tipo==='podcast'){
+      player.innerHTML=`<audio controls style="width:100%"><source src="${url}">Navegador sem suporte.</audio>${dl?`<a class="download-btn" href="${url}" download target="_blank">⬇️ Baixar ${tipo}</a>`:''}`;
+    } else if(tipo==='pdf'){
+      player.innerHTML=`<iframe class="pdf-viewer" src="${url}"></iframe>`;
     }
-  };
+  }
+};
 
-  window.backToMaterias = () => {
-    document.getElementById('materiasView').style.display   = 'block';
-    document.getElementById('conteudoViewer').style.display = 'none';
-  };
+window.backToMaterias = () => {
+  document.getElementById('materiasView').style.display   = 'block';
+  document.getElementById('conteudoViewer').style.display = 'none';
+};
 
-  /* ── FATURAS ── */
-  async function loadFaturas() {
-    const list = document.getElementById('faturasList');
-    list.innerHTML = '<div class="dash-loading">Carregando...</div>';
-    const snap = await getDocs(query(
-      collection(db,'users',currentUser.uid,'faturas'), orderBy('vencimento','desc')
-    ));
-    if (snap.empty) { list.innerHTML = '<div class="dash-empty">Nenhuma fatura lançada ainda.</div>'; return; }
-    list.innerHTML = '';
-    snap.forEach(d => {
-      const f = d.data();
-      const pago = f.status === 'pago';
-      list.innerHTML += `
-        <div class="fatura-item ${pago ? 'fatura-paga' : 'fatura-aberta'}">
-          <div class="fatura-info">
-            <strong>${f.descricao||'Mensalidade'}</strong>
-            <span>Vencimento: ${f.vencimento||'-'}</span>
-          </div>
+async function loadFaturas() {
+  const list = document.getElementById('faturasList');
+  list.innerHTML='<div class="dash-loading">Carregando...</div>';
+  try {
+    const snap = await getDocs(query(collection(db,'users',ME.uid,'faturas'),orderBy('vencimento','desc')));
+    if(snap.empty){ list.innerHTML='<div class="dash-empty">Nenhuma fatura ainda.</div>'; return; }
+    list.innerHTML='';
+    snap.forEach(d=>{
+      const f=d.data(); const pago=f.status==='pago';
+      list.innerHTML+=`
+        <div class="fatura-item ${pago?'fatura-paga':'fatura-aberta'}">
+          <div class="fatura-info"><strong>${f.descricao||'Mensalidade'}</strong><span>Venc: ${f.vencimento||'-'}</span></div>
           <div class="fatura-valor">R$ ${(f.valor||0).toFixed(2)}</div>
-          <span class="badge ${pago ? 'badge-green' : 'badge-yellow'}">${pago ? '✅ Pago' : '⏳ Em aberto'}</span>
+          <span class="badge ${pago?'badge-green':'badge-yellow'}">${pago?'✅ Pago':'⏳ Em aberto'}</span>
         </div>`;
     });
-  }
+  } catch(e){ list.innerHTML='<div class="dash-empty">Erro: '+e.message+'</div>'; }
+}
 
-  /* ── LOGOUT ── */
-  window.doLogout = async () => {
-    await signOut(auth);
-    window.location.href = 'index.html';
-  };
-  })();
+window.doLogout = async () => { await signOut(auth); window.location.replace('index.html'); };
 </script>
 </body>
 </html>
