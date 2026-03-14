@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ─── LOGIN COM FIREBASE ─────────────────── */
   // Importa Firebase dinamicamente
   const { initializeApp }         = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-  const { getAuth, signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+  const { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
   const { getFirestore, doc, getDoc }           = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
   const _app  = initializeApp({
@@ -300,6 +300,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (errEl) errEl.textContent = '';
 
     try {
+      // Garante que a sessão persiste no navegador
+      await setPersistence(_auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(_auth, email, password);
       const uid  = cred.user.uid;
 
