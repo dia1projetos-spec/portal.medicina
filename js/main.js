@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     storageBucket:     "medicinaargv.firebasestorage.app",
     messagingSenderId: "443649777294",
     appId:             "1:443649777294:web:d44592a81fbf091cb5f3df"
-  }, "main-app");
+  });
   const _auth = getAuth(_app);
   const _db   = getFirestore(_app);
 
