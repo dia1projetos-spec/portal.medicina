@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admins — só admin lê
+    match /admins/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Usuários — admin lê tudo, aluno lê só os próprios dados
+    match /users/{uid} {
+      allow read, write: if request.auth != null &&
+        (request.auth.uid == uid ||
+         exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+
+      // Faturas — aluno vê as próprias, admin vê todas
+      match /faturas/{faturaId} {
+        allow read, write: if request.auth != null &&
+          (request.auth.uid == uid ||
+           exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      }
+    }
+
+    // Matérias — qualquer logado lê, só admin escreve
+    match /materias/{materiaId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+
+      // Conteúdos — qualquer logado lê, só admin escreve
+      match /conteudos/{conteudoId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null &&
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      }
+    }
+
+    // Artigos do blog — qualquer um lê os publicados, só admin escreve
+    match /artigos/{artigoId} {
+      allow read: if resource.data.status == 'publicado' ||
+        (request.auth != null &&
+         exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      allow write: if request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+  }
+}

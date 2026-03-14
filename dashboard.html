@@ -273,19 +273,56 @@
   let userData    = null;
 
   /* ── AUTH ── */
-  onAuthStateChanged(auth, async user => {
-    if (!user) { window.location.href = 'index.html'; return; }
-    currentUser = user;
+  let authResolved = false;
 
-    // Verifica se está ativo no Firestore
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    if (!snap.exists() || !snap.data().ativo) {
-      await signOut(auth);
-      window.location.href = 'index.html';
+  // Timeout de segurança — se Firebase demorar demais, redireciona
+  const authTimeout = setTimeout(() => {
+    if (!authResolved) window.location.href = 'index.html';
+  }, 8000);
+
+  onAuthStateChanged(auth, async user => {
+    authResolved = true;
+    clearTimeout(authTimeout);
+
+    if (!user) {
+      // Pequeno delay pra garantir que o Firebase carregou a sessão
+      setTimeout(() => { window.location.href = 'index.html'; }, 500);
       return;
     }
-    userData = snap.data();
-    initDashboard();
+
+    currentUser = user;
+
+    try {
+      // Verifica se está ativo no Firestore
+      const snap = await getDoc(doc(db, 'users', user.uid));
+
+      if (!snap.exists()) {
+        // Pode ser admin — verifica
+        const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+        if (adminSnap.exists()) {
+          // É admin, redireciona pro painel admin
+          window.location.href = 'admin.html';
+          return;
+        }
+        await signOut(auth);
+        window.location.href = 'index.html';
+        return;
+      }
+
+      if (!snap.data().ativo) {
+        await signOut(auth);
+        window.location.href = 'index.html';
+        return;
+      }
+
+      userData = snap.data();
+      initDashboard();
+    } catch(e) {
+      console.error('Auth error:', e);
+      // Em caso de erro de permissão, tenta carregar mesmo assim
+      userData = { nome: 'Aluno', ano: '1' };
+      initDashboard();
+    }
   });
 
   function initDashboard() {
