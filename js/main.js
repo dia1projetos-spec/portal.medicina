@@ -314,14 +314,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Verifica se é aluno ativo
       const userSnap = await getDoc(doc(_db, 'users', uid));
-      if (userSnap.exists() && userSnap.data().ativo) {
-        btn.textContent = '✓ Entrando...';
-        btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
-        return;
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.ativo === true) {
+          btn.textContent = '✓ Entrando...';
+          btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+          return;
+        } else {
+          // Conta desativada ou deletada
+          btn.textContent = 'Entrar';
+          btn.disabled = false;
+          if (errEl) errEl.textContent = 'Sua conta foi desativada. Entre em contato.';
+          return;
+        }
       }
 
-      // Usuário existe mas não está ativo
+      // Usuário não encontrado no Firestore
       btn.textContent = 'Entrar';
       btn.disabled = false;
       if (errEl) errEl.textContent = 'Acesso não autorizado. Aguarde a liberação.';
