@@ -2,7 +2,7 @@
    MEDICINAARG v2.0.0 — main.js
    ============================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
   /* ─── CUSTOM CURSOR (desktop only) ──────── */
   const dot  = document.querySelector('.cursor-dot');
@@ -266,16 +266,78 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* ─── FORMS DEMO ─────────────────────────── */
-  document.getElementById('loginForm')?.addEventListener('submit', e => {
+  /* ─── LOGIN COM FIREBASE ─────────────────── */
+  // Importa Firebase dinamicamente
+  const { initializeApp }         = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+  const { getAuth, signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+  const { getFirestore, doc, getDoc }           = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+  const _app  = initializeApp({
+    apiKey:            "AIzaSyCqzdQNpZi27nsnmD1XAP-9hXcJiHqVzOM",
+    authDomain:        "medicinaargv.firebaseapp.com",
+    projectId:         "medicinaargv",
+    storageBucket:     "medicinaargv.firebasestorage.app",
+    messagingSenderId: "443649777294",
+    appId:             "1:443649777294:web:d44592a81fbf091cb5f3df"
+  }, "main-app");
+  const _auth = getAuth(_app);
+  const _db   = getFirestore(_app);
+
+  document.getElementById('loginForm')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const btn = e.target.querySelector('.form-submit');
+    const btn      = e.target.querySelector('.form-submit');
+    const email    = (document.getElementById('loginEmail') || document.getElementById('loginForm').querySelector('input[type="email"]')).value.trim();
+    const password = (document.getElementById('loginPassword') || document.getElementById('loginForm').querySelector('input[type="password"]')).value;
+    const errEl    = document.getElementById('loginErr');
+
+    if (!email || !password) {
+      if (errEl) errEl.textContent = 'Preencha email e senha.';
+      return;
+    }
+
     btn.textContent = 'Entrando...';
     btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = '✓ Sucesso!';
-      btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
-    }, 1400);
+    if (errEl) errEl.textContent = '';
+
+    try {
+      const cred = await signInWithEmailAndPassword(_auth, email, password);
+      const uid  = cred.user.uid;
+
+      // Verifica se é admin
+      const adminSnap = await getDoc(doc(_db, 'admins', uid));
+      if (adminSnap.exists()) {
+        btn.textContent = '✓ Admin! Redirecionando...';
+        btn.style.background = 'linear-gradient(135deg,#7B2FBE,#4A0E8F)';
+        setTimeout(() => { window.location.href = 'admin.html'; }, 800);
+        return;
+      }
+
+      // Verifica se é aluno ativo
+      const userSnap = await getDoc(doc(_db, 'users', uid));
+      if (userSnap.exists() && userSnap.data().ativo) {
+        btn.textContent = '✓ Entrando...';
+        btn.style.background = 'linear-gradient(135deg,#27ae60,#1e8449)';
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+        return;
+      }
+
+      // Usuário existe mas não está ativo
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
+      if (errEl) errEl.textContent = 'Acesso não autorizado. Aguarde a liberação.';
+
+    } catch(err) {
+      const msgs = {
+        'auth/invalid-email':      'Email inválido.',
+        'auth/user-not-found':     'Usuário não encontrado.',
+        'auth/wrong-password':     'Senha incorreta.',
+        'auth/invalid-credential': 'Email ou senha incorretos.',
+        'auth/too-many-requests':  'Muitas tentativas. Aguarde.',
+      };
+      if (errEl) errEl.textContent = msgs[err.code] || 'Erro ao entrar.';
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
+    }
   });
 
   document.getElementById('registerForm')?.addEventListener('submit', e => {
@@ -319,10 +381,17 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ─── SMOOTH SCROLL ─────────────────────── */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const href = a.getAttribute('href');
+      // Ignora links que são só "#" ou que têm data-modal
+      if (!href || href === '#' || a.hasAttribute('data-modal')) return;
+      try {
+        const target = document.querySelector(href);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } catch(err) {
+        // selector inválido, ignora
       }
     });
   });
