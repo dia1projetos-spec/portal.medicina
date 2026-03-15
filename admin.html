@@ -795,6 +795,29 @@
       </div>
     </div>
 
+    <!-- ── MATERIAIS ── -->
+    <div class="section" id="sec-materiais">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Materiais de Estudo</div>
+          <div class="page-subtitle">Apostilas e materiais digitais para os alunos — sem PDF, sem Drive!</div>
+        </div>
+        <button class="btn-primary" onclick="openNewMaterial()">+ Novo Material</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Materiais Cadastrados</span>
+          <div style="display:flex;gap:10px;align-items:center">
+            <label style="font-size:11px;color:var(--gray-mid);text-transform:uppercase;letter-spacing:1px">Filtrar por matéria:</label>
+            <select id="materialFiltroMateria" onchange="loadMateriais()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(123,47,190,0.25);padding:6px 12px;border-radius:6px;color:var(--white);font-family:var(--font-b);font-size:13px;outline:none">
+              <option value="">Todas</option>
+            </select>
+          </div>
+        </div>
+        <div id="materiaisList"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
     <!-- ── BLOG ── -->
     <div class="section" id="sec-blog">
       <div class="page-header">
@@ -905,7 +928,7 @@
       <form id="conteudoForm" onsubmit="return false;">
         <div class="form-group"><label>Título</label><input type="text" id="cTitulo" placeholder="Ex: Aula 01 — Introdução à Anatomia"></div>
         <div class="form-row">
-          <div class="form-group"><label>Tipo</label><select id="cTipo" onchange="toggleDownloadOpt()"><option value="video">🎬 Vídeo</option><option value="audio">🎧 Áudio</option><option value="podcast">🎙️ Podcast</option><option value="pdf">📄 PDF</option></select></div>
+          <div class="form-group"><label>Tipo</label><select id="cTipo" onchange="updateUrlHint()"><option value="video">🎬 Vídeo</option><option value="audio">🎧 Áudio</option><option value="podcast">🎙️ Podcast</option><option value="pdf">📄 PDF</option></select></div>
           <div class="form-group"><label>Ordem</label><input type="number" id="cOrdem" placeholder="1" min="1"></div>
         </div>
         <div class="form-group">
